@@ -1,57 +1,49 @@
 const config = {
-    ollama_url: "https://a3fa-18-199-106-113.ngrok-free.app"
+    ollama_url: "https://9212-3-121-217-249.ngrok-free.app", // Use local URL first for testing
+    debug: true
+};
+
+// Add error constants
+const ERRORS = {
+    NGROK: 'Ngrok tunnel not accessible. Please check if ngrok is running.',
+    OLLAMA: 'Ollama service not responding. Please check if Ollama is running.',
+    TIMEOUT: 'Request timed out. Please try again.'
 };
 
 const API = {
     defaults: {
         headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
         }
     },
     
     async fetch(url, options = {}) {
         const finalOptions = {
             ...options,
-            mode: 'cors',
-            credentials: 'omit',
-            headers: {
-                ...this.defaults.headers,
-                ...options.headers
-            }
+            headers: this.defaults.headers
         };
-        
-        let retries = 0;
-        const maxRetries = 3;
-        
-        while (retries < maxRetries) {
-            try {
-                const response = await fetch(url, finalOptions);
-                
-                if (response.status === 403) {
-                    console.log(`Retry ${retries + 1}/${maxRetries}`);
-                    finalOptions.headers = {
-                        'Accept': '*/*',
-                        'User-Agent': 'PostmanRuntime/7.32.3',
-                        'Connection': 'keep-alive',
-                        'ngrok-skip-browser-warning': 'true'
-                    };
-                    retries++;
-                    continue;
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                return response;
-            } catch (error) {
-                if (retries === maxRetries - 1) throw error;
-                retries++;
-                await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (config.debug) {
+            console.log('Request:', { url, options: finalOptions });
+        }
+
+        try {
+            const response = await fetch(url, finalOptions);
+            
+            if (config.debug) {
+                console.log('Response status:', response.status);
             }
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            return response;
+        } catch (error) {
+            console.error('Fetch error:', error);
+            throw error;
         }
     }
 };
@@ -75,18 +67,17 @@ async function sendMessage() {
             body: JSON.stringify({
                 model: "gemma3:12b",
                 prompt: message,
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    top_p: 0.9
-                }
+                stream: false
             })
         });
 
         const data = await response.json();
+        if (!data.response) {
+            throw new Error('Invalid response from Ollama');
+        }
         updateMessage(loadingId, data.response);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Chat error:', error);
         updateMessage(loadingId, `Error: ${error.message}`);
     }
 }
