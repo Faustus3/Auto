@@ -9,26 +9,36 @@ async function generateImage() {
     const prompt = promptInput.value || "A beautiful artistic image in modern style";
 
     try {
-        // Clone the workflow and update the prompt
+        // Add API queue check before sending prompt
+        const queueResponse = await fetch(`${config.comfyui_url}/queue`);
+        if (!queueResponse.ok) {
+            throw new Error('ComfyUI server not responding. Check if ngrok tunnel is active.');
+        }
+
         const workflowClone = JSON.parse(JSON.stringify(config.workflow));
         const textNode = workflowClone.nodes.find(n => n.id === 3);
         if (!textNode) throw new Error('Text input node not found');
         textNode.inputs.text = prompt;
 
-        // Send prompt to ComfyUI
+        // Modified prompt request
         const response = await fetch(`${config.comfyui_url}/prompt`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
-                prompt: workflowClone.nodes
+                prompt: workflowClone.nodes,
+                client_id: `web-${Date.now()}` // Add client ID
             })
         });
 
         if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('ComfyUI API not found. Check your ngrok URL.');
+            }
             const errorText = await response.text();
-            throw new Error(`Failed to send prompt: ${errorText}`);
+            throw new Error(`Server error: ${errorText}`);
         }
         
         const data = await response.json();
@@ -86,4 +96,65 @@ document.addEventListener('DOMContentLoaded', () => {
     if (promptInput) {
         promptInput.value = "A beautiful artistic image in modern style";
     }
+});
+
+const config = {
+    ollama_url: "https://a3fa-18-199-106-113.ngrok-free.app"
+};
+
+async function sendMessage() {
+    const userInput = document.getElementById('userInput');
+    const chatHistory = document.getElementById('chatHistory');
+    const message = userInput.value.trim();
+
+    if (!message) return;
+
+    appendMessage('user', message);
+    userInput.value = '';
+
+    try {
+        const response = await fetch(`${config.ollama_url}/api/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: "gemma3:12b",
+                prompt: message,
+                stream: false,
+                options: {
+                    temperature: 0.7,
+                    top_p: 0.9
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        appendMessage('bot', data.response);
+
+    } catch (error) {
+        console.error('Error:', error);
+        appendMessage('bot', 'Sorry, I encountered an error processing your request.');
+    }
+}
+
+function appendMessage(type, content) {
+    const chatHistory = document.getElementById('chatHistory');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}-message`;
+    messageDiv.textContent = content;
+    chatHistory.appendChild(messageDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
 });
