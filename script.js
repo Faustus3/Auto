@@ -1,5 +1,6 @@
 const config = {
-    comfyui_url: "https://52d4-18-199-106-113.ngrok-free.app",
+    comfyui_url: "https://11be-3-121-217-249.ngrok-free.app",
+    ollama_url: "https://a3fa-18-199-106-113.ngrok-free.app",
     workflow: {"id":"114cc5f1-b772-4390-89ed-1e5d08cd908e","nodes":[{"id":19,"type":"CheckpointLoaderSimple","inputs":{},"class_type":"CheckpointLoaderSimple","model_name":"bigasp_v20.safetensors"},{"id":5,"type":"LoraLoader","inputs":{"model":["19",0],"clip":["19",1]},"class_type":"LoraLoader","lora_name":"ivan-bilibin_pony_v1.safetensors","strength_model":1,"strength_clip":1},{"id":3,"type":"CLIPTextEncode","inputs":{"clip":["5",1],"text":""},"class_type":"CLIPTextEncode"},{"id":4,"type":"CLIPTextEncode","inputs":{"clip":["5",1],"text":"deformed, distorted, disfigured, malformed, bad anatomy"},"class_type":"CLIPTextEncode"},{"id":7,"type":"KSampler","inputs":{"model":["5",0],"positive":["3",0],"negative":["4",0],"latent":["33",0]},"class_type":"KSampler","seed":571420420502440,"steps":40,"cfg":8.6,"sampler_name":"euler","scheduler":"normal","denoise":1},{"id":8,"type":"VAEDecode","inputs":{"samples":["7",0],"vae":["19",2]},"class_type":"VAEDecode"},{"id":9,"type":"SaveImage","inputs":{"images":["27",0]},"class_type":"SaveImage"},{"id":27,"type":"ImageUpscaleWithModel","inputs":{"image":["8",0],"upscale_model":["28",0]},"class_type":"ImageUpscaleWithModel"},{"id":28,"type":"UpscaleModelLoader","inputs":{},"class_type":"UpscaleModelLoader","model_name":"4x_NMKD-Siax_200k.pth"},{"id":33,"type":"VAEEncode","inputs":{"pixels":["23",0],"vae":["19",2]},"class_type":"VAEEncode"}]}
 };
 
@@ -66,11 +67,12 @@ async function generateImage() {
                     img.src = imageUrl;
                     img.className = 'result-image';
                     img.onerror = () => {
-                        resultDiv.innerHTML = 'Failed to load image';
+                        resultDiv.innerHTML = 'Failed to load image. Please try again.';
                     };
-                    
-                    resultDiv.innerHTML = '';
-                    resultDiv.appendChild(img);
+                    img.onload = () => {
+                        resultDiv.innerHTML = '';
+                        resultDiv.appendChild(img);
+                    };
                     break;
                 }
             } catch (error) {
@@ -98,10 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-const config = {
-    ollama_url: "https://a3fa-18-199-106-113.ngrok-free.app"
-};
-
 async function sendMessage() {
     const userInput = document.getElementById('userInput');
     const chatHistory = document.getElementById('chatHistory');
@@ -111,6 +109,9 @@ async function sendMessage() {
 
     appendMessage('user', message);
     userInput.value = '';
+
+    // Add loading indicator
+    const loadingId = appendMessage('bot', 'Thinking...');
 
     try {
         const response = await fetch(`${config.ollama_url}/api/generate`, {
@@ -134,11 +135,12 @@ async function sendMessage() {
         }
 
         const data = await response.json();
-        appendMessage('bot', data.response);
+        // Replace loading message with actual response
+        updateMessage(loadingId, data.response);
 
     } catch (error) {
         console.error('Error:', error);
-        appendMessage('bot', 'Sorry, I encountered an error processing your request.');
+        updateMessage(loadingId, 'Sorry, I encountered an error processing your request.');
     }
 }
 
@@ -147,8 +149,18 @@ function appendMessage(type, content) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}-message`;
     messageDiv.textContent = content;
+    const messageId = Date.now();
+    messageDiv.setAttribute('data-message-id', messageId);
     chatHistory.appendChild(messageDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
+    return messageId;
+}
+
+function updateMessage(messageId, content) {
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageDiv) {
+        messageDiv.textContent = content;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
