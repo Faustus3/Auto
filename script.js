@@ -1,49 +1,76 @@
 const config = {
-    ollama_url: "https://9212-3-121-217-249.ngrok-free.app", // Use local URL first for testing
-    debug: true
+    ollama_url: "https://9212-3-121-217-249.ngrok-free.app",
+    debug: true,
+    model: "gemma3:12b",
+    retries: 3,
+    timeout: 30000
 };
 
-// Add error constants
 const ERRORS = {
     NGROK: 'Ngrok tunnel not accessible. Please check if ngrok is running.',
     OLLAMA: 'Ollama service not responding. Please check if Ollama is running.',
-    TIMEOUT: 'Request timed out. Please try again.'
+    TIMEOUT: 'Request timed out. Please try again.',
+    MODEL: 'Model not loaded. Please run: ollama run gemma3:12b'
 };
 
 const API = {
     defaults: {
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
         }
     },
     
     async fetch(url, options = {}) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+        
         const finalOptions = {
             ...options,
-            headers: this.defaults.headers
+            signal: controller.signal,
+            headers: {
+                ...this.defaults.headers,
+                ...options.headers
+            }
         };
 
         if (config.debug) {
-            console.log('Request:', { url, options: finalOptions });
+            console.log('Request:', { 
+                url, 
+                method: options.method, 
+                headers: finalOptions.headers,
+                body: options.body 
+            });
         }
 
-        try {
-            const response = await fetch(url, finalOptions);
-            
-            if (config.debug) {
-                console.log('Response status:', response.status);
-            }
+        let lastError;
+        for (let i = 0; i < config.retries; i++) {
+            try {
+                const response = await fetch(url, finalOptions);
+                clearTimeout(timeoutId);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Response error:', errorText);
-                throw new Error(`Server error: ${response.status}`);
-            }
+                if (response.status === 403) {
+                    throw new Error(ERRORS.NGROK);
+                }
 
-            return response;
-        } catch (error) {
-            console.error('Fetch error:', error);
-            throw error;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || ERRORS.OLLAMA);
+                }
+
+                return response;
+            } catch (error) {
+                lastError = error;
+                if (error.name === 'AbortError') {
+                    throw new Error(ERRORS.TIMEOUT);
+                }
+                if (i < config.retries - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                    continue;
+                }
+                throw lastError;
+            }
         }
     }
 };
@@ -65,7 +92,7 @@ async function sendMessage() {
         const response = await API.fetch(`${config.ollama_url}/api/generate`, {
             method: 'POST',
             body: JSON.stringify({
-                model: "gemma3:12b",
+                model: config.model,
                 prompt: message,
                 stream: false
             })
