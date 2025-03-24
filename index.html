@@ -1,25 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ComfyUI Image Generator</title>
+    <title>Ollama Chat Interface</title>
     <style>
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
         }
-        .result-image {
-            max-width: 100%;
-            margin-top: 20px;
+        .chat-history {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .bot-message {
+            background-color: #f5f5f5;
+            margin-right: 20%;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        #userInput {
+            flex-grow: 1;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ComfyUI Image Generator</h1>
-        <textarea id="prompt" rows="4" style="width: 100%"></textarea>
-        <button onclick="generateImage()">Generate Image</button>
-        <div id="result"></div>
+        <h1>Chat with AI</h1>
+        <div id="chatHistory" class="chat-history"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
