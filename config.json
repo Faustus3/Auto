@@ -1,5 +1,5 @@
 {
-    "api_url": "https://your-pythonanywhere-username.pythonanywhere.com",
+    "api_url": "Faust3.pythonanywhere.com.",
     "schedule": {
         "tuesday": {
             "enabled": true,
