@@ -21,49 +21,6 @@
         <button onclick="generateImage()">Generate Image</button>
         <div id="result"></div>
     </div>
-    <script>
-        const config = {
-            comfyui_url: "https://52d4-18-199-106-113.ngrok-free.app",
-            default_prompt: "Ein künstlerisches Bild im modernen Stil, mit lebendigen Farben und abstrakten Elementen",
-            negative_prompt: "schlechte Qualität, niedrige Auflösung, verschwommen, verpixelt"
-        };
-
-        async function generateImage() {
-            const promptInput = document.getElementById('prompt');
-            const resultDiv = document.getElementById('result');
-            const prompt = promptInput.value || config.default_prompt;
-
-            try {
-                // Send request to ComfyUI
-                const response = await fetch(`${config.comfyui_url}/generate`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        negative_prompt: config.negative_prompt
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to generate image');
-                
-                const data = await response.json();
-                
-                // Display the generated image
-                const img = document.createElement('img');
-                img.src = data.image_url;
-                img.className = 'result-image';
-                
-                resultDiv.innerHTML = '';
-                resultDiv.appendChild(img);
-            } catch (error) {
-                resultDiv.innerHTML = `Error: ${error.message}`;
-            }
-        }
-
-        // Initialize prompt textarea with default value
-        document.getElementById('prompt').value = config.default_prompt;
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
