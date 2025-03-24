@@ -17,8 +17,10 @@ const API = {
     defaults: {
         headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
+            'Accept': '*/*',
+            'ngrok-skip-browser-warning': '1',
+            'User-Agent': 'OllamaClient/1.0',
+            'Connection': 'keep-alive'
         }
     },
     
@@ -28,10 +30,13 @@ const API = {
         
         const finalOptions = {
             ...options,
+            mode: 'cors',
+            credentials: 'omit',
             signal: controller.signal,
             headers: {
                 ...this.defaults.headers,
-                ...options.headers
+                ...options.headers,
+                'Origin': new URL(url).origin
             }
         };
 
@@ -51,7 +56,14 @@ const API = {
                 clearTimeout(timeoutId);
 
                 if (response.status === 403) {
-                    throw new Error(ERRORS.NGROK);
+                    // Try alternative headers on 403
+                    finalOptions.headers = {
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'PostmanRuntime/7.32.3',
+                        'Accept': '*/*',
+                        'ngrok-skip-browser-warning': '1'
+                    };
+                    continue;
                 }
 
                 if (!response.ok) {
