@@ -1,5 +1,5 @@
 const config = {
-    ollama_url: "https://9212-3-121-217-249.ngrok-free.app",
+    ollama_url: "https://0c3a-3-121-217-249.ngrok-free.app",
     debug: true,
     model: "gemma3:12b",
     retries: 3,
