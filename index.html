@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Automation</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/gallery.css">
+</head>
+<body>
+    <header>
+        <h1>Instagram Automation</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active">Galerie</a></li>
+                <li><a href="approval.html">Bildfreigabe</a></li>
+                <li><a href="settings.html">Einstellungen</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section class="gallery-container">
+            <h2>Generierte Bilder</h2>
+            <div class="gallery" id="imageGallery">
+                <!-- Bilder werden dynamisch eingefügt -->
+            </div>
+        </section>
+        
+        <section class="generation-container">
+            <h2>Neue Bilder generieren</h2>
+            <div class="prompt-builder">
+                <h3>Prompt-Generator</h3>
+                <div class="prompt-structure">
+                    <div class="prompt-element">
+                        <label for="subject">Subjekt:</label>
+                        <input type="text" id="subject" placeholder="Was soll im Bild dargestellt werden?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="style">Stil:</label>
+                        <input type="text" id="style" placeholder="Welcher künstlerische Stil?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="details">Details:</label>
+                        <input type="text" id="details" placeholder="Welche spezifischen Elemente?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="format">Ausgabeformat:</label>
+                        <select id="format">
+                            <option value="portrait">Portrait (3:4)</option>
+                            <option value="landscape">Landscape (4:3)</option>
+                            <option value="square">Quadratisch (1:1)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="prompt-preview">
+                    <label>Generierter Prompt:</label>
+                    <textarea id="finalPrompt" readonly></textarea>
+                </div>
+                <button id="generateButton">Bild generieren</button>
+            </div>
+        </section>
+        
+        <section class="llama-chat">
+            <h2>LLaMA Chat</h2>
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Chat-Nachrichten werden dynamisch eingefügt -->
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Nachricht eingeben...">
+                    <button id="sendButton">Senden</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Instagram Automation</p>
+    </footer>
+    
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script src="static/js/gallery.js"></script>
+    <script src="static/js/main.js"></script>
+</body>
+</html>
