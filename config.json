@@ -1,5 +1,5 @@
 {
-    "api_url": "Faust3.pythonanywhere.com.",
+    "api_url": "https://your-pythonanywhere-username.pythonanywhere.com",
     "schedule": {
         "tuesday": {
             "enabled": true,
@@ -29,7 +29,7 @@
         "send_reminder": true
     },
     "comfyui": {
-        "url": "http://127.0.0.1:8188",
+        "url": "https://52d4-18-199-106-113.ngrok-free.app",
         "default_prompt": "Ein künstlerisches Bild im modernen Stil, mit lebendigen Farben und abstrakten Elementen",
         "negative_prompt": "schlechte Qualität, niedrige Auflösung, verschwommen, verpixelt"
     }
