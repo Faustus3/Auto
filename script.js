@@ -6,6 +6,16 @@ const config = {
     timeout: 30000
 };
 
+// Add URL validation function
+function isValidUrl(url) {
+    try {
+        new URL(url);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
 const ERRORS = {
     NGROK: 'Ngrok tunnel not accessible. Please check if ngrok is running.',
     OLLAMA: 'Ollama service not responding. Please check if Ollama is running.',
@@ -56,20 +66,29 @@ const API = {
     }
 };
 
+// Modify the sendMessage function
 async function sendMessage() {
     const userInput = document.getElementById('userInput');
-    const chatHistory = document.getElementById('chatHistory');
     const message = userInput.value.trim();
 
     if (!message) return;
 
+    // Validate Ollama URL before proceeding
+    if (!isValidUrl(config.ollama_url)) {
+        console.error('Invalid Ollama URL:', config.ollama_url);
+        appendMessage('bot', 'Error: Invalid Ollama URL configuration');
+        return;
+    }
+
     appendMessage('user', message);
     userInput.value = '';
 
-    // Add loading indicator
     const loadingId = appendMessage('bot', 'Thinking...');
 
     try {
+        // Add debug log before making request
+        console.log('Attempting to send request to:', `${config.ollama_url}/api/generate`);
+        
         const response = await API.fetch(`${config.ollama_url}/api/generate`, {
             method: 'POST',
             body: JSON.stringify({
@@ -86,7 +105,12 @@ async function sendMessage() {
         updateMessage(loadingId, data.response);
     } catch (error) {
         console.error('Chat error:', error);
-        updateMessage(loadingId, `Error: ${error.message}`);
+        // Provide more specific error messages
+        let errorMessage = error.message;
+        if (error.message.includes('Failed to fetch')) {
+            errorMessage = ERRORS.NGROK;
+        }
+        updateMessage(loadingId, `Error: ${errorMessage}`);
     }
 }
 
