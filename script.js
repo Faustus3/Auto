@@ -1,5 +1,5 @@
 const config = {
-    ollama_url: "https://0c3a-3-121-217-249.ngrok-free.app",
+    ollama_url: "https://93af-3-121-217-249.ngrok-free.app", // Will update with ngrok URL
     debug: true,
     model: "gemma3:12b",
     retries: 3,
@@ -17,27 +17,18 @@ const API = {
     defaults: {
         headers: {
             'Content-Type': 'application/json',
-            'Accept': '*/*',
-            'ngrok-skip-browser-warning': '1',
-            'User-Agent': 'OllamaClient/1.0',
-            'Connection': 'keep-alive'
+            'Accept': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
+            'Authorization': 'Bearer null' // Added for ngrok auth
         }
     },
     
     async fetch(url, options = {}) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), config.timeout);
-        
         const finalOptions = {
             ...options,
-            mode: 'cors',
+            mode: 'cors', // Changed back to cors mode
             credentials: 'omit',
-            signal: controller.signal,
-            headers: {
-                ...this.defaults.headers,
-                ...options.headers,
-                'Origin': new URL(url).origin
-            }
+            headers: this.defaults.headers
         };
 
         if (config.debug) {
@@ -49,40 +40,18 @@ const API = {
             });
         }
 
-        let lastError;
-        for (let i = 0; i < config.retries; i++) {
-            try {
-                const response = await fetch(url, finalOptions);
-                clearTimeout(timeoutId);
+        try {
+            const response = await fetch(url, finalOptions);
 
-                if (response.status === 403) {
-                    // Try alternative headers on 403
-                    finalOptions.headers = {
-                        'Content-Type': 'application/json',
-                        'User-Agent': 'PostmanRuntime/7.32.3',
-                        'Accept': '*/*',
-                        'ngrok-skip-browser-warning': '1'
-                    };
-                    continue;
-                }
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || ERRORS.OLLAMA);
-                }
-
-                return response;
-            } catch (error) {
-                lastError = error;
-                if (error.name === 'AbortError') {
-                    throw new Error(ERRORS.TIMEOUT);
-                }
-                if (i < config.retries - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-                    continue;
-                }
-                throw lastError;
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || ERRORS.OLLAMA);
             }
+
+            return response;
+        } catch (error) {
+            console.error('Fetch error:', error);
+            throw error;
         }
     }
 };
