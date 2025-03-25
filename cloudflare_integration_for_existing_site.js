@@ -3,8 +3,8 @@
 
 // Konfiguration - Ersetzen Sie diese URLs mit Ihren tatsächlichen Cloudflare Tunnel Domains
 const config = {
-    comfyuiUrl: 'https://comfy-ui.sohaltweil.de/', // Ihre ComfyUI-Domain
-    ollamaUrl: 'https://ollama.sohaltweil.de',   // Ihre Ollama-Domain
+    comfyuiUrl: 'https://comfyui.IHRE-DOMAIN.com', // Ihre ComfyUI-Domain
+    ollamaUrl: 'https://ollama.IHRE-DOMAIN.com',   // Ihre Ollama-Domain
     captionModel: 'gemma3:4b'                      // Das zu verwendende Modell
 };
 
