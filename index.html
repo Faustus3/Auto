@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' *.cloudflare.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <title>Instagram Automation</title>
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="static/css/gallery.css">
@@ -79,9 +81,13 @@
         <p>&copy; 2025 Instagram Automation</p>
     </footer>
     
-    <script src="static/js/config.js"></script>
-    <script src="static/js/api.js"></script>
-    <script src="static/js/gallery.js"></script>
-    <script src="static/js/main.js"></script>
+    <!-- Core application scripts -->
+    <script src="static/js/config.js" defer></script>
+    <script src="static/js/api.js" defer></script>
+    <script src="static/js/gallery.js" defer></script>
+    <script src="static/js/main.js" defer></script>
+    
+    <!-- Cloudflare integration -->
+    <script src="cloudflare_integration_for_existing_site.js" defer></script>
 </body>
 </html>
