@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' *.cloudflare.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' *.cloudflare.com ollama.sohaltweil.de; script-src 'self' 'unsafe-inline';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <title>Instagram Automation</title>
     <link rel="stylesheet" href="static/css/style.css">
     <link rel="stylesheet" href="static/css/gallery.css">
+    <link rel="stylesheet" href="static/css/chat.css">
 </head>
 <body>
     <header>
@@ -60,11 +61,21 @@
                     <textarea id="finalPrompt" readonly></textarea>
                 </div>
                 <button id="generateButton">Bild generieren</button>
+                <button type="button" data-action="generate-caption">Bildunterschrift generieren</button>
             </div>
         </section>
         
         <section class="llama-chat">
-            <h2>LLaMA Chat</h2>
+            <h2>LLAMA Chat</h2>
+            <div id="chatOutput" class="chat-output"></div>
+            <form id="chatForm">
+                <input type="text" id="chatInput" placeholder="Nachricht eingeben...">
+                <button type="submit">Senden</button>
+            </form>
+        </section>
+        
+        <section class="llama-chat">
+            <h2>Ollama Chat</h2>
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages">
                     <!-- Chat-Nachrichten werden dynamisch eingefügt -->
@@ -76,7 +87,7 @@
             </div>
         </section>
     </main>
-    
+
     <footer>
         <p>&copy; 2025 Instagram Automation</p>
     </footer>
@@ -89,5 +100,65 @@
     
     <!-- Cloudflare integration -->
     <script src="cloudflare_integration_for_existing_site.js" defer></script>
+
+    <script>
+        class OllamaChat {
+            constructor() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatInput = document.getElementById('chatInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.apiUrl = 'https://ollama.sohaltweil.de/api/generate';
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                this.sendButton.addEventListener('click', () => this.sendMessage());
+                this.chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
+            }
+
+            async sendMessage() {
+                const message = this.chatInput.value.trim();
+                if (!message) return;
+
+                this.appendMessage('user', message);
+                this.chatInput.value = '';
+
+                try {
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: "llama2",
+                            prompt: message,
+                            stream: false
+                        })
+                    });
+
+                    const data = await response.json();
+                    this.appendMessage('assistant', data.response);
+
+                } catch (error) {
+                    console.error('Fehler beim Senden der Nachricht:', error);
+                    this.appendMessage('system', 'Fehler beim Senden der Nachricht');
+                }
+            }
+
+            appendMessage(role, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${role}-message`;
+                messageDiv.textContent = content;
+                this.chatMessages.appendChild(messageDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const chat = new OllamaChat();
+        });
+    </script>
 </body>
 </html>
