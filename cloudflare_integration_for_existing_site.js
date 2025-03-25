@@ -3,10 +3,31 @@
 
 // Konfiguration - Ersetzen Sie diese URLs mit Ihren tatsächlichen Cloudflare Tunnel Domains
 const config = {
-    comfyuiUrl: 'https://comfyui.IHRE-DOMAIN.com', // Ihre ComfyUI-Domain
-    ollamaUrl: 'https://ollama.IHRE-DOMAIN.com',   // Ihre Ollama-Domain
+    comfyuiUrl: 'https://comfyui.sohaltweil.de', // Ihre ComfyUI-Domain
+    ollamaUrl: 'https://ollama.sohaltweil.de',   // Ihre Ollama-Domain
     captionModel: 'gemma3:4b'                      // Das zu verwendende Modell
 };
+
+const cloudflareConfig = {
+    tunnels: {
+        comfyui: {
+            url: process.env.COMFYUI_TUNNEL_URL || 'https://comfyui.sohaltweil.de',
+            timeout: 300000, // 5 minutes
+            retryAttempts: 3
+        },
+        ollama: {
+            url: process.env.OLLAMA_TUNNEL_URL || 'https://ollama.sohaltweil.de',
+            model: process.env.OLLAMA_MODEL || 'gemma3:4b',
+            timeout: 30000
+        }
+    },
+    security: {
+        maxRequestsPerMinute: 10,
+        apiToken: process.env.CLOUDFLARE_API_TOKEN
+    }
+};
+
+export default cloudflareConfig;
 
 // Der ComfyUI-Workflow aus der bereitgestellten JSON-Datei
 const comfyuiWorkflow = {
@@ -306,3 +327,79 @@ window.instagramAutomation = {
     generateCaptionWithOllama,
     saveApprovedImage
 };
+
+// Funktion zum Generieren von Bildunterschriften mit Ollama
+async function generateCaptionWithOllama(prompt) {
+    try {
+        console.log('Generiere Bildunterschrift mit Ollama...');
+        
+        // Anfrage an Ollama senden
+        const response = await fetch(`${cloudflareConfig.ollama.url}/api/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${cloudflareConfig.security.apiToken}`
+            },
+            body: JSON.stringify({
+                model: cloudflareConfig.ollama.model,
+                prompt: prompt,
+                options: {
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    max_tokens: 200
+                }
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ollama API-Fehler: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Antwort von Ollama erhalten:', data);
+        
+        return data.response.trim();
+    } catch (error) {
+        console.error('Fehler bei der Bildunterschrift-Generierung mit Ollama:', error);
+        return 'Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.';
+    }
+}
+
+// Event-Listener für die Chat-Funktion
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.querySelector('#chatForm');
+    const chatInput = document.querySelector('#chatInput');
+    const chatOutput = document.querySelector('#chatOutput');
+
+    if (chatForm && chatInput && chatOutput) {
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userMessage = chatInput.value;
+            if (userMessage.trim() === '') {
+                return;
+            }
+
+            // Benutzer-Nachricht anzeigen
+            const userMessageElement = document.createElement('div');
+            userMessageElement.textContent = userMessage;
+            chatOutput.appendChild(userMessageElement);
+
+            // Eingabefeld leeren
+            chatInput.value = '';
+
+            // Antwort von Ollama generieren
+            try {
+                const ollamaResponse = await generateCaptionWithOllama(userMessage);
+                const ollamaMessageElement = document.createElement('div');
+                ollamaMessageElement.textContent = ollamaResponse;
+                chatOutput.appendChild(ollamaMessageElement);
+            } catch (error) {
+                console.error('Fehler bei der Antwort-Generierung:', error);
+                const errorMessageElement = document.createElement('div');
+                errorMessageElement.textContent = 'Entschuldigung, ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.';
+                chatOutput.appendChild(errorMessageElement);
+            }
+        });
+    }
+});
