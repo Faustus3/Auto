@@ -1,52 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-    <title>Ollama Chat Interface</title>
-    <style>
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .chat-history {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .user-message {
-            background-color: #e3f2fd;
-            margin-left: 20%;
-        }
-        .bot-message {
-            background-color: #f5f5f5;
-            margin-right: 20%;
-        }
-        .input-area {
-            display: flex;
-            gap: 10px;
-        }
-        #userInput {
-            flex-grow: 1;
-            padding: 10px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Automation</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/gallery.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Chat with AI</h1>
-        <div id="chatHistory" class="chat-history"></div>
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="Type your message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
-    </div>
-    <script src="script.js"></script>
+    <header>
+        <h1>Instagram Automation</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html" class="active">Galerie</a></li>
+                <li><a href="approval.html">Bildfreigabe</a></li>
+                <li><a href="settings.html">Einstellungen</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main>
+        <section class="gallery-container">
+            <h2>Generierte Bilder</h2>
+            <div class="gallery" id="imageGallery">
+                <!-- Bilder werden dynamisch eingefügt -->
+            </div>
+        </section>
+        
+        <section class="generation-container">
+            <h2>Neue Bilder generieren</h2>
+            <div class="prompt-builder">
+                <h3>Prompt-Generator</h3>
+                <div class="prompt-structure">
+                    <div class="prompt-element">
+                        <label for="subject">Subjekt:</label>
+                        <input type="text" id="subject" placeholder="Was soll im Bild dargestellt werden?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="style">Stil:</label>
+                        <input type="text" id="style" placeholder="Welcher künstlerische Stil?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="details">Details:</label>
+                        <input type="text" id="details" placeholder="Welche spezifischen Elemente?">
+                    </div>
+                    <div class="prompt-element">
+                        <label for="format">Ausgabeformat:</label>
+                        <select id="format">
+                            <option value="portrait">Portrait (3:4)</option>
+                            <option value="landscape">Landscape (4:3)</option>
+                            <option value="square">Quadratisch (1:1)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="prompt-preview">
+                    <label>Generierter Prompt:</label>
+                    <textarea id="finalPrompt" readonly></textarea>
+                </div>
+                <button id="generateButton">Bild generieren</button>
+            </div>
+        </section>
+        
+        <section class="llama-chat">
+            <h2>LLaMA Chat</h2>
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Chat-Nachrichten werden dynamisch eingefügt -->
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Nachricht eingeben...">
+                    <button id="sendButton">Senden</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Instagram Automation</p>
+    </footer>
+    
+    <script src="static/js/config.js"></script>
+    <script src="static/js/api.js"></script>
+    <script src="static/js/gallery.js"></script>
+    <script src="static/js/main.js"></script>
 </body>
 </html>
