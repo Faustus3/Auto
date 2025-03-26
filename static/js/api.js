@@ -183,12 +183,16 @@ const API = {
     // LLaMA-Chat-Nachricht senden
     sendChatMessage: async function(message) {
         try {
-            const response = await fetch(`${CONFIG.OLLAMA_URL}/api/chat`, {
+            const response = await fetch(`${CONFIG.OLLAMA_URL}/api/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message })
+                body: JSON.stringify({
+                    model: "llama2",
+                    prompt: message,
+                    stream: false
+                })
             });
             if (!response.ok) {
                 throw new Error('Fehler beim Senden der Chat-Nachricht');
