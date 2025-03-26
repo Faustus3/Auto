@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' *.cloudflare.com comfy-ui.sohaltweil.de https://corsproxy.io; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: comfy-ui.sohaltweil.de https://corsproxy.io;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' *.cloudflare.com comfy-ui.sohaltweil.de localhost:3000; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: comfy-ui.sohaltweil.de localhost:3000;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <title>ComfyUI Controller</title>
     <style>
@@ -85,6 +85,21 @@
             max-width: 100%;
             height: auto;
         }
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -103,6 +118,7 @@
         </div>
         
         <button id="generateButton">Bild generieren</button>
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
         
         <h2>Generierte Bilder</h2>
         <div id="generatedImages" class="generated-images">
@@ -118,10 +134,29 @@
             const ollamaPrompt = document.getElementById('ollamaPrompt');
             const generateButton = document.getElementById('generateButton');
             const generatedImages = document.getElementById('generatedImages');
+            const statusMessage = document.getElementById('statusMessage');
             
-            // CORS-Proxy URL
-            const corsProxy = 'https://corsproxy.io/?';
-            const comfyUIUrl = 'https://comfy-ui.sohaltweil.de/upload_and_run';
+            // Lokaler Proxy-Server URL
+            const proxyUrl = 'http://localhost:3000/proxy/upload_and_run';
+            
+            // Statusnachricht anzeigen
+            function showStatus(message, isError = false) {
+                statusMessage.textContent = message;
+                statusMessage.style.display = 'block';
+                
+                if (isError) {
+                    statusMessage.classList.add('error');
+                    statusMessage.classList.remove('success');
+                } else {
+                    statusMessage.classList.add('success');
+                    statusMessage.classList.remove('error');
+                }
+            }
+            
+            // Statusnachricht ausblenden
+            function hideStatus() {
+                statusMessage.style.display = 'none';
+            }
             
             // Bild-Upload-Vorschau
             imageUpload.addEventListener('change', function() {
@@ -142,17 +177,18 @@
                 const prompt = ollamaPrompt.value.trim();
                 
                 if (!uploadedFile) {
-                    alert('Bitte laden Sie ein Ausgangsfoto hoch.');
+                    showStatus('Bitte laden Sie ein Ausgangsfoto hoch.', true);
                     return;
                 }
                 
                 if (!prompt) {
-                    alert('Bitte geben Sie einen Prompt ein.');
+                    showStatus('Bitte geben Sie einen Prompt ein.', true);
                     return;
                 }
                 
                 generateButton.disabled = true;
                 generateButton.textContent = 'Generiere...';
+                showStatus('Bild wird generiert, bitte warten...');
                 
                 try {
                     // Formular für den Upload erstellen
@@ -161,24 +197,25 @@
                     formData.append('prompt', prompt);
                     formData.append('workflow', 'nudity.json');
                     
-                    // Zum ComfyUI-Server über CORS-Proxy senden
-                    const response = await fetch(corsProxy + encodeURIComponent(comfyUIUrl), {
+                    // Zum lokalen Proxy-Server senden
+                    const response = await fetch(proxyUrl, {
                         method: 'POST',
                         body: formData
                     });
                     
                     if (!response.ok) {
-                        throw new Error('Fehler bei der Bildgenerierung');
+                        throw new Error(`Server-Fehler: ${response.status} ${response.statusText}`);
                     }
                     
                     const result = await response.json();
                     
                     // Generierte Bilder anzeigen
                     displayGeneratedImages(result.images);
+                    showStatus('Bilder wurden erfolgreich generiert!');
                     
                 } catch (error) {
                     console.error('Fehler:', error);
-                    alert('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
+                    showStatus(`Ein Fehler ist aufgetreten: ${error.message}`, true);
                 } finally {
                     generateButton.disabled = false;
                     generateButton.textContent = 'Bild generieren';
