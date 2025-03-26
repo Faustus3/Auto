@@ -28,8 +28,8 @@
         "address": "theaterfreiburgfaust3@gmail.com",
         "send_reminder": true
     },
-    "comfyui": {
-        "url": "http://127.0.0.1:8188",
+    "comfy-ui": {
+        "url": "https://confy-ui.sohaltweil.de",
         "default_prompt": "Ein künstlerisches Bild im modernen Stil, mit lebendigen Farben und abstrakten Elementen",
         "negative_prompt": "schlechte Qualität, niedrige Auflösung, verschwommen, verpixelt"
     }
