@@ -183,7 +183,7 @@ const API = {
     // LLaMA-Chat-Nachricht senden
     sendChatMessage: async function(message) {
         try {
-            const response = await fetch(`${CONFIG.API_URL}/api/llama/chat`, {
+            const response = await fetch(`${CONFIG.OLLAMA_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
