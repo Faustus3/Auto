@@ -1,11 +1,13 @@
 // Konfigurationsdatei für die Instagram Automation
 const CONFIG = {
     // API-URL des Backend-Dienstes
-    API_URL: "https://your-pythonanywhere-username.pythonanywhere.com",
+    API_URL: "https://Faust3.pythonanywhere.com",
+    // Ollama Chat API URL
+    OLLAMA_URL: "https://ollama.sohaltweil.de",
     
-    // ComfyUI-Einstellungen
-    COMFYUI: {
-        URL: "http://127.0.0.1:8188",
+    // Comfy-UI Einstellungen
+    COMFY_UI: {
+        URL: "https://comfy-ui.sohaltweil.de",
         DEFAULT_PROMPT: "Ein künstlerisches Bild im modernen Stil, mit lebendigen Farben und abstrakten Elementen",
         NEGATIVE_PROMPT: "schlechte Qualität, niedrige Auflösung, verschwommen, verpixelt"
     },
