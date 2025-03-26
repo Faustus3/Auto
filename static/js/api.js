@@ -183,15 +183,20 @@ const API = {
     // LLaMA-Chat-Nachricht senden
     sendChatMessage: async function(message) {
         try {
-            const response = await fetch(`${CONFIG.OLLAMA_URL}/api/generate`, {
+            const response = await fetch(`${CONFIG.OPENROUTER.URL}/chat/completions`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.OPENROUTER.API_KEY}`,
+                    'HTTP-Referer': 'https://sohaltweil.de', // Required by OpenRouter
+                    'X-Title': 'Sohaltweil Chat' // Optional but recommended
                 },
                 body: JSON.stringify({
-                    model: "llama2",
-                    prompt: message,
-                    stream: false
+                    model: CONFIG.OPENROUTER.DEFAULT_MODEL,
+                    messages: [{
+                        role: "user",
+                        content: message
+                    }]
                 })
             });
             if (!response.ok) {

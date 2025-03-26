@@ -2,8 +2,12 @@
 const CONFIG = {
     // API-URL des Backend-Dienstes
     API_URL: "https://Faust3.pythonanywhere.com",
-    // Ollama Chat API URL
-    OLLAMA_URL: "https://ollama.sohaltweil.de",
+    // OpenRouter API Configuration
+    OPENROUTER: {
+        URL: "https://openrouter.ai/api/v1",
+        API_KEY: "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", // Get from https://openrouter.ai/keys
+        DEFAULT_MODEL: "meta-llama/llama-2-70b-chat"
+    },
     
     // Comfy-UI Einstellungen
     COMFY_UI: {
