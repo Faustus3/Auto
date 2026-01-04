@@ -1,12 +1,12 @@
 /* Pastell-Farbenpalette inspiriert von Fibonacci-Folge */
 :root {
-    /* Fibonacci-basierte Pastellfarben */
-    --fib-pastel-1: #fff8e1; /* Pastellgelb - Fibonacci 1 */
-    --fib-pastel-2: #e8f5e9; /* Pastellgrün - Fibonacci 2 */
-    --fib-pastel-3: #e0f7fa; /* Pastellblau - Fibonacci 3 */
-    --fib-pastel-5: #f3e5f5; /* Pastelllila - Fibonacci 5 */
-    --fib-pastel-8: #fff3e0; /* Pastellorange - Fibonacci 8 */
-    --fib-pastel-13: #e8eaf6; /* Pastellindigo - Fibonacci 13 */
+    /* Fibonacci-basierte Pastellfarben - mit höherer Sättigung */
+    --fib-pastel-1: #fff1b8; /* Gesättigteres Pastellgelb - Fibonacci 1 */
+    --fib-pastel-2: #c8e6c9; /* Gesättigteres Pastellgrün - Fibonacci 2 */
+    --fib-pastel-3: #b2ebf2; /* Gesättigteres Pastellblau - Fibonacci 3 */
+    --fib-pastel-5: #e1bee7; /* Gesättigteres Pastelllila - Fibonacci 5 */
+    --fib-pastel-8: #ffcc80; /* Gesättigteres Pastellorange - Fibonacci 8 */
+    --fib-pastel-13: #c5cae9; /* Gesättigteres Pastellindigo - Fibonacci 13 */
 
     /* Akzentfarben */
     --fib-accent-1: #ffcc80; /* Warmer Akzent */
@@ -27,11 +27,11 @@
     --fib-spacing-5: 5rem;
     --fib-spacing-8: 8rem;
 
-    /* Animation Timings basierend auf Fibonacci */
-    --fib-time-1: 1s;
-    --fib-time-2: 2s;
-    --fib-time-3: 3s;
-    --fib-time-5: 5s;
+    /* Animation Timings basierend auf Fibonacci - verlangsamt */
+    --fib-time-1: 2s;
+    --fib-time-2: 4s;
+    --fib-time-3: 6s;
+    --fib-time-5: 10s;
 }
 
 body {
