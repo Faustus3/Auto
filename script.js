@@ -6,7 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const privateFilesSection = document.querySelector('.private-files-section');
     const websiteLinkSection = document.querySelector('.website-link-section');
     const logoutButton = document.getElementById('logoutButton');
+    const addNoteBtn = document.querySelector('.add-note-btn');
+    const notesContainer = document.querySelector('.notes-container');
     const glCanvas = document.getElementById('glcanvas');
+    
+    // Notizen aus localStorage laden
+    let notes = JSON.parse(localStorage.getItem('finn-notes')) || [];
 
     // --- GLSL Background Animation ---
     const gl = glCanvas.getContext('webgl');
@@ -186,6 +191,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Notizen-Funktionalität
+    function createNoteElement(note, index) {
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note-item';
+        noteElement.innerHTML = `
+            <h3 contenteditable="true" onblur="updateNoteTitle(${index}, this.textContent)">${note.title}</h3>
+            <p contenteditable="true" onblur="updateNoteContent(${index}, this.textContent)">${note.content}</p>
+            <small>Erstellt: ${note.date}</small>
+            <button onclick="deleteNote(${index})" style="position: absolute; top: 10px; right: 10px; background: #ff4444; padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 0.2rem;">Löschen</button>
+        `;
+        return noteElement;
+    }
+    
+    function renderNotes() {
+        notesContainer.innerHTML = '';
+        notes.forEach((note, index) => {
+            const noteElement = createNoteElement(note, index);
+            notesContainer.appendChild(noteElement);
+        });
+    }
+    
+    function addNote() {
+        const title = prompt('Notiz-Titel:');
+        if (title) {
+            const content = prompt('Notiz-Inhalt:');
+            const newNote = {
+                title: title,
+                content: content || '',
+                date: new Date().toLocaleDateString('de-DE')
+            };
+            notes.push(newNote);
+            localStorage.setItem('finn-notes', JSON.stringify(notes));
+            renderNotes();
+        }
+    }
+    
+    function updateNoteTitle(index, newTitle) {
+        notes[index].title = newTitle;
+        localStorage.setItem('finn-notes', JSON.stringify(notes));
+    }
+    
+    function updateNoteContent(index, newContent) {
+        notes[index].content = newContent;
+        localStorage.setItem('finn-notes', JSON.stringify(notes));
+    }
+    
+    function deleteNote(index) {
+        if (confirm('Notiz wirklich löschen?')) {
+            notes.splice(index, 1);
+            localStorage.setItem('finn-notes', JSON.stringify(notes));
+            renderNotes();
+        }
+    }
+    
+    // Event Listener für Notiz-Button
+    addNoteBtn.addEventListener('click', addNote);
+    
+    // Notizen beim Laden anzeigen
+    renderNotes();
+
     logoutButton.addEventListener('click', () => {
         loginMessage.textContent = '';
         loginMessage.className = 'message';
@@ -196,4 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
         websiteLinkSection.style.display = 'block';
         privateFilesSection.style.display = 'none';
     });
+    
+    // Globale Funktionen für contenteditable
+    window.updateNoteTitle = updateNoteTitle;
+    window.updateNoteContent = updateNoteContent;
+    window.deleteNote = deleteNote;
 });
