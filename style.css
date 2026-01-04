@@ -36,15 +36,15 @@
 
 body {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Courier New', monospace;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Abstand zur oberen Kante */
+    align-items: flex-start;
     min-height: 100vh;
-    padding-top: 2rem; /* Abstand zur oberen Kante */
-    background: linear-gradient(137.5deg, #1a237e 0%, #4a148c 50%, #311b92 100%); /* Dunkler, farbiger Hintergrund */
+    padding-top: 2rem;
+    background: linear-gradient(137.5deg, #1a237e 0%, #4a148c 50%, #311b92 100%);
     color: #333;
-    overflow: auto; /* Scrollen ermöglichen */
+    overflow: auto;
     position: relative;
 }
 
@@ -105,47 +105,38 @@ canvas {
 }
 
 .container {
-    background-color: rgba(200, 200, 200, 0.9); /* Grau statt Weiß */
+    background-color: rgba(200, 200, 200, 0.9);
     padding: var(--fib-spacing-3);
-    border-radius: calc(var(--fib-spacing-3) * 1.618); /* Goldener Schnitt */
-    box-shadow: 0 calc(var(--fib-spacing-1) * 0.5) calc(var(--fib-spacing-5)),
-                0 0 calc(var(--fib-spacing-2)) rgba(128, 203, 196, 0.3);
+    border-radius: 0.5rem; /* Weniger runde Ecken */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     text-align: center;
     max-width: 600px;
     width: 90%;
     z-index: 1;
     position: relative;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    transition: all 0.3s ease;
+    border: 1px solid #666;
+    transition: all 0.5s ease; /* Langsamer */
 }
 
 .container:hover {
-    box-shadow: 0 calc(var(--fib-spacing-2)) calc(var(--fib-spacing-8)),
-                0 0 calc(var(--fib-spacing-3)) rgba(178, 235, 242, 0.4);
-    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
 }
 
 h1 {
-    color: #1a237e; /* Dunkleres Blau für Finn's Privater Website */
+    color: #1a237e;
     margin-bottom: var(--fib-spacing-2);
-    font-size: 2.618rem; /* Goldener Schnitt */
-    text-shadow: 2px 2px 4px rgba(26, 35, 126, 0.3);
-    background: linear-gradient(90deg, #1a237e, #311b92); /* Dunkler Farbverlauf */
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientText var(--fib-time-3) ease infinite;
+    font-size: 2.2rem;
+    font-weight: normal;
+    text-shadow: none;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: unset;
+    animation: none;
 }
 
-@keyframes gradientText {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
+/* Keine gradientText Animation mehr */
 
 h2 {
     color: var(--fib-accent-3);
