@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const welcomeSection = document.querySelector('.welcome-section');
     const loginSection = document.querySelector('.login-section');
     const privateFilesSection = document.querySelector('.private-files-section');
+    const websiteLinkSection = document.querySelector('.website-link-section');
     const logoutButton = document.getElementById('logoutButton');
     const glCanvas = document.getElementById('glcanvas');
 
@@ -177,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginMessage.className = 'message success';
             welcomeSection.style.display = 'none';
             loginSection.style.display = 'none';
+            websiteLinkSection.style.display = 'none';
             privateFilesSection.style.display = 'block';
         } else {
             loginMessage.textContent = 'Ungültiger Benutzername oder Passwort.';
@@ -191,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('password').value = '';
         welcomeSection.style.display = 'block';
         loginSection.style.display = 'block';
+        websiteLinkSection.style.display = 'block';
         privateFilesSection.style.display = 'none';
     });
 });
