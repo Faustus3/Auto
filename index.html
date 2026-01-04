@@ -34,13 +34,6 @@
         </div>
         <div class="login-section">
             <h2>Anmelden</h2>
-            <div style="background: rgba(0, 212, 255, 0.1); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid var(--neon-blue);">
-                <p style="margin: 0; color: var(--neon-blue); font-size: 0.9rem;">
-                    <strong>Anmeldeinformationen:</strong><br>
-                    Benutzername: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.2rem;">test</code><br>
-                    Passwort: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.2rem;">test</code>
-                </p>
-            </div>
             <form id="loginForm">
                 <div class="form-group">
                     <label for="username">Benutzername:</label>
@@ -54,32 +47,34 @@
             </form>
             <p id="loginMessage" class="message"></p>
         </div>
-        <!-- Notizblock Sektion -->
-        <div class="notes-section">
-            <h2>Notizen & Ideen</h2>
-            <div class="notes-container">
-                <div class="note-item">
-                    <h3>Kreative Ideen</h3>
-                    <p>Hier können Sie Ihre kreativen Ideen und Gedanken festhalten...</p>
-                    <small>Erstellt: Heute</small>
-                </div>
-                <div class="note-item">
-                    <h3>Projekt Notizen</h3>
-                    <p>Wichtige Punkte für aktuelle Projekte...</p>
-                    <small>Erstellt: Gestern</small>
-                </div>
-                <div class="note-item">
-                    <h3>Inspiration</h3>
-                    <p>Quellen und Ideen für zukünftige Arbeiten...</p>
-                    <small>Erstellt: Vor 2 Tagen</small>
-                </div>
-            </div>
-            <button class="add-note-btn">Neue Notiz hinzufügen</button>
-        </div>
         <div class="private-files-section" style="display: none;">
             <h2>Ihre privaten Dateien</h2>
             <p>Diese Sektion würde normalerweise die Oberfläche zur Verwaltung Ihrer privaten Dateien enthalten.</p>
             <p>Beachten Sie: Für die tatsächliche Speicherung und Verwaltung von Dateien ist eine Backend-Implementierung erforderlich.</p>
+            
+            <!-- Notizblock Sektion -->
+            <div class="notes-section">
+                <h2>Notizen & Ideen</h2>
+                <div class="notes-container">
+                    <div class="note-item">
+                        <h3>Kreative Ideen</h3>
+                        <p>Hier können Sie Ihre kreativen Ideen und Gedanken festhalten...</p>
+                        <small>Erstellt: Heute</small>
+                    </div>
+                    <div class="note-item">
+                        <h3>Projekt Notizen</h3>
+                        <p>Wichtige Punkte für aktuelle Projekte...</p>
+                        <small>Erstellt: Gestern</small>
+                    </div>
+                    <div class="note-item">
+                        <h3>Inspiration</h3>
+                        <p>Quellen und Ideen für zukünftige Arbeiten...</p>
+                        <small>Erstellt: Vor 2 Tagen</small>
+                    </div>
+                </div>
+                <button class="add-note-btn">Neue Notiz hinzufügen</button>
+            </div>
+            
             <button id="logoutButton">Abmelden</button>
         </div>
     </div>
