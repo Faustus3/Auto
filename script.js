@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
 
         // Einfache Frontend-Validierung (für Demonstrationszwecke)
-        if (username === 'Finn' && password === 'test') {
+        if ((username === 'Finn' || username === 'Dani') && password === 'test') {
             loginMessage.textContent = 'Anmeldung erfolgreich!';
             loginMessage.className = 'message success';
             welcomeSection.style.display = 'none';
@@ -196,10 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const noteElement = document.createElement('div');
         noteElement.className = 'note-item';
         noteElement.innerHTML = `
-            <h3 contenteditable="true" onblur="updateNoteTitle(${index}, this.textContent)">${note.title}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <h3 contenteditable="true" onblur="updateNoteTitle(${index}, this.textContent)" style="margin: 0; flex: 1;">${note.title}</h3>
+                <button onclick="deleteNote(${index})" style="background: #ff4444; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 0.2rem; font-size: 0.8rem; cursor: pointer; margin-left: 1rem;">Löschen</button>
+            </div>
             <p contenteditable="true" onblur="updateNoteContent(${index}, this.textContent)">${note.content}</p>
             <small>Erstellt: ${note.date}</small>
-            <button onclick="deleteNote(${index})" style="position: absolute; top: 10px; right: 10px; background: #ff4444; padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 0.2rem;">Löschen</button>
         `;
         return noteElement;
     }
