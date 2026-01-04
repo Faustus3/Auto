@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
 
         // Einfache Frontend-Validierung (für Demonstrationszwecke)
-        if (username === 'test' && password === 'test') {
+        if (username === 'Finn' && password === 'test') {
             loginMessage.textContent = 'Anmeldung erfolgreich!';
             loginMessage.className = 'message success';
             welcomeSection.style.display = 'none';
