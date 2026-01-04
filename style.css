@@ -1,12 +1,12 @@
 /* Pastell-Farbenpalette inspiriert von Fibonacci-Folge */
 :root {
-    /* Fibonacci-basierte Pastellfarben - mit höherer Sättigung */
-    --fib-pastel-1: #fff1b8; /* Gesättigteres Pastellgelb - Fibonacci 1 */
-    --fib-pastel-2: #c8e6c9; /* Gesättigteres Pastellgrün - Fibonacci 2 */
-    --fib-pastel-3: #b2ebf2; /* Gesättigteres Pastellblau - Fibonacci 3 */
-    --fib-pastel-5: #e1bee7; /* Gesättigteres Pastelllila - Fibonacci 5 */
-    --fib-pastel-8: #ffcc80; /* Gesättigteres Pastellorange - Fibonacci 8 */
-    --fib-pastel-13: #c5cae9; /* Gesättigteres Pastellindigo - Fibonacci 13 */
+    /* Fibonacci-basierte Pastellfarben - stärker gesättigt */
+    --fib-pastel-1: #ffed4e; /* Stark gesättigtes Pastellgelb - Fibonacci 1 */
+    --fib-pastel-2: #66bb6a; /* Stark gesättigtes Pastellgrün - Fibonacci 2 */
+    --fib-pastel-3: #42a5f5; /* Stark gesättigtes Pastellblau - Fibonacci 3 */
+    --fib-pastel-5: #ab47bc; /* Stark gesättigtes Pastelllila - Fibonacci 5 */
+    --fib-pastel-8: #ff7043; /* Stark gesättigtes Pastellorange - Fibonacci 8 */
+    --fib-pastel-13: #5c6bc0; /* Stark gesättigtes Pastellindigo - Fibonacci 13 */
 
     /* Akzentfarben */
     --fib-accent-1: #ffcc80; /* Warmer Akzent */
@@ -27,11 +27,11 @@
     --fib-spacing-5: 5rem;
     --fib-spacing-8: 8rem;
 
-    /* Animation Timings basierend auf Fibonacci - verlangsamt */
-    --fib-time-1: 2s;
-    --fib-time-2: 4s;
-    --fib-time-3: 6s;
-    --fib-time-5: 10s;
+    /* Animation Timings basierend auf Fibonacci - weiter verlangsamt */
+    --fib-time-1: 3s;
+    --fib-time-2: 6s;
+    --fib-time-3: 9s;
+    --fib-time-5: 15s;
 }
 
 body {
@@ -157,6 +157,111 @@ h2::after {
     margin-bottom: var(--fib-spacing-3);
     line-height: 1.8;
     font-size: 1.1rem;
+}
+
+/* WEBSITE LINK SECTION - Größere Kachel */
+.website-link-section {
+    margin-top: var(--fib-spacing-3);
+    margin-bottom: var(--fib-spacing-3);
+    padding: var(--fib-spacing-5);
+    background: linear-gradient(135deg, var(--fib-pastel-1), var(--fib-pastel-3));
+    border-radius: calc(var(--fib-spacing-3) * 1.618);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 calc(var(--fib-spacing-2)) calc(var(--fib-spacing-8)),
+                0 0 calc(var(--fib-spacing-3)) rgba(66, 165, 245, 0.4);
+    transition: all 0.5s ease;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+.website-link-section::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    background: linear-gradient(45deg, var(--fib-pastel-1), var(--fib-pastel-3), var(--fib-pastel-5));
+    background-size: 400% 400%;
+    border-radius: calc(var(--fib-spacing-3) * 1.618 + 3px);
+    z-index: -1;
+    opacity: 0.8;
+    animation: gradientBorder var(--fib-time-3) linear infinite;
+}
+
+@keyframes gradientBorder {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.website-link-section:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 calc(var(--fib-spacing-3)) calc(var(--fib-spacing-8)),
+                0 0 calc(var(--fib-spacing-5)) rgba(66, 165, 245, 0.6);
+}
+
+.website-link-section h2 {
+    color: #1a237e;
+    font-size: 2rem;
+    margin-bottom: var(--fib-spacing-2);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.website-link-section p {
+    color: #283593;
+    font-size: 1.2rem;
+    margin-bottom: var(--fib-spacing-3);
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+.website-button {
+    display: inline-block;
+    padding: calc(var(--fib-spacing-2) * 1) calc(var(--fib-spacing-3) * 1);
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    color: white;
+    text-decoration: none;
+    border-radius: calc(var(--fib-spacing-2) * 1.618);
+    font-size: 1.3rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow: 0 calc(var(--fib-spacing-1)) calc(var(--fib-spacing-3)) rgba(0, 212, 255, 0.4);
+}
+
+.website-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: -1;
+}
+
+.website-button:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 calc(var(--fib-spacing-2)) calc(var(--fib-spacing-5)) rgba(0, 212, 255, 0.6),
+                0 0 calc(var(--fib-spacing-3)) rgba(138, 43, 226, 0.4);
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.website-button:hover::before {
+    transform: translateX(100%);
 }
 
 /* NEON LOGIN SECTION */
