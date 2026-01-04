@@ -27,11 +27,11 @@
     --fib-spacing-5: 5rem;
     --fib-spacing-8: 8rem;
 
-    /* Animation Timings basierend auf Fibonacci - weiter verlangsamt */
-    --fib-time-1: 3s;
-    --fib-time-2: 6s;
-    --fib-time-3: 9s;
-    --fib-time-5: 15s;
+    /* Animation Timings basierend auf Fibonacci - viel langsamer */
+    --fib-time-1: 8s;
+    --fib-time-2: 16s;
+    --fib-time-3: 24s;
+    --fib-time-5: 40s;
 }
 
 body {
@@ -39,11 +39,12 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Abstand zur oberen Kante */
     min-height: 100vh;
-    background: linear-gradient(137.5deg, var(--fib-pastel-3) 0%, var(--fib-pastel-5) 50%, var(--fib-pastel-8) 100%);
+    padding-top: 2rem; /* Abstand zur oberen Kante */
+    background: linear-gradient(137.5deg, #1a237e 0%, #4a148c 50%, #311b92 100%); /* Dunkler, farbiger Hintergrund */
     color: #333;
-    overflow: hidden; /* Für GLSL-Hintergrund */
+    overflow: auto; /* Scrollen ermöglichen */
     position: relative;
 }
 
@@ -270,7 +271,7 @@ h2::after {
     border-top: 2px solid var(--neon-blue);
     padding-top: var(--fib-spacing-3);
     position: relative;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.2); /* Dunklerer Hintergrund für besseren Kontrast */
     border-radius: calc(var(--fib-spacing-2) * 1.618);
     padding: var(--fib-spacing-3);
     box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
@@ -320,7 +321,7 @@ label {
     color: var(--neon-blue);
     font-weight: bold;
     font-size: 1.1rem;
-    text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.8); /* Stärkerer Schatten für besseren Kontrast */
     transition: all 0.3s ease;
 }
 

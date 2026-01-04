@@ -32,82 +32,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
 
-    // Fibonacci-basierter Fragment-Shader mit Pastellfarben
+    // Fragment-Shader mit dunkleren, ruhigeren Farben
     const fragmentShaderSource = `
         precision highp float;
         uniform float u_time;
         uniform vec2 u_resolution;
 
-        // Fibonacci-Funktion für Farbauswahl
-        float fib(float n) {
-            float phi = (1.0 + sqrt(5.0)) / 2.0;
-            return (pow(phi, n) - pow(1.0 - phi, n)) / sqrt(5.0);
-        }
-
-        // Pastellfarben basierend auf Fibonacci-Folge
-        vec3 getFibPastel(float index) {
+        // Dunklere, satte Farben
+        vec3 getDarkColor(float index) {
             index = mod(index, 5.0);
 
-            if (index < 1.0) return vec3(1.0, 0.973, 0.882); // Pastellgelb (fff8e1)
-            else if (index < 2.0) return vec3(0.910, 0.961, 0.914); // Pastellgrün (e8f5e9)
-            else if (index < 3.0) return vec3(0.878, 0.973, 0.980); // Pastellblau (e0f7fa)
-            else if (index < 4.0) return vec3(0.953, 0.898, 0.961); // Pastelllila (f3e5f5)
-            else return vec3(1.0, 0.953, 0.878); // Pastellorange (fff3e0)
+            if (index < 1.0) return vec3(0.2, 0.1, 0.4);      // Dunkelblau
+            else if (index < 2.0) return vec3(0.3, 0.0, 0.3); // Dunkellila
+            else if (index < 3.0) return vec3(0.1, 0.1, 0.5); // Tiefblau
+            else if (index < 4.0) return vec3(0.4, 0.0, 0.2); // Dunkelrot
+            else return vec3(0.0, 0.2, 0.3);                  // Dunkeltürkis
         }
 
-        // Goldener Schnitt Spirale
-        vec2 goldenSpiral(vec2 st, float time) {
-            vec2 center = vec2(0.5);
-            vec2 pos = st - center;
-
-            // Polarkoordinaten
-            float r = length(pos);
-            float angle = atan(pos.y, pos.x);
-
-            // Fibonacci-Spirale Transformation
-            float fibAngle = angle + time * 0.3;
-            float fibRadius = r * (1.0 + 0.3 * sin(fibAngle * fib(5.0)));
-
-            // Zurück zu kartesischen Koordinaten
-            vec2 fibPos;
-            fibPos.x = fibRadius * cos(fibAngle);
-            fibPos.y = fibRadius * sin(fibAngle);
-
-            return center + fibPos * 0.8;
+        // Minimalistische Linien-Muster
+        float linePattern(vec2 st, float angle, float spacing, float width) {
+            float line = abs(sin(st.x * cos(angle) + st.y * sin(angle) + u_time * 0.05));
+            return smoothstep(0.0, width, line) * smoothstep(spacing, spacing - width, line);
         }
 
+        // Sanfte Wellen mit viel langsamerer Animation
         void main() {
             vec2 st = gl_FragCoord.xy / u_resolution.xy;
             st.x *= u_resolution.x / u_resolution.y; // Seitenverhältnis korrigieren
 
-            // Fibonacci-basierte Farbauswahl
-            float colorIndex = floor(mod(u_time * 0.2, 5.0));
-            vec3 baseColor = getFibPastel(colorIndex);
+            // Langsame Farbauswahl
+            float colorIndex = floor(mod(u_time * 0.05, 5.0)); // 20x langsamer
+            vec3 baseColor = getDarkColor(colorIndex);
 
-            // Goldener Schnitt Spirale Effekt
-            vec2 spiralSt = goldenSpiral(st, u_time);
+            // Sehr sanfte Wellen mit reduzierter Frequenz
+            float wave1 = 0.5 + 0.5 * sin(st.x * 2.0 + u_time * 0.1); // 10x langsamer
+            float wave2 = 0.5 + 0.5 * sin(st.y * 3.0 + u_time * 0.08);
+            float wave3 = 0.5 + 0.5 * sin(length(st - 0.5) * 4.0 + u_time * 0.12);
 
-            // Sanfte Wellen mit Fibonacci-Frequenzen
-            float wave1 = 0.5 + 0.5 * sin(spiralSt.x * fib(3.0) + u_time * 0.5);
-            float wave2 = 0.5 + 0.5 * sin(spiralSt.y * fib(5.0) + u_time * 0.3);
-            float wave3 = 0.5 + 0.5 * sin(length(spiralSt) * fib(8.0) + u_time * 0.7);
+            // Sanfte Farbmischung
+            vec3 color1 = getDarkColor(colorIndex);
+            vec3 color2 = getDarkColor(colorIndex + 1.0);
+            vec3 color3 = getDarkColor(colorIndex + 2.0);
 
-            // Farbmischung mit Fibonacci-Verhältnissen
-            vec3 color1 = getFibPastel(colorIndex);
-            vec3 color2 = getFibPastel(colorIndex + 1.0);
-            vec3 color3 = getFibPastel(colorIndex + 2.0);
+            vec3 finalColor = mix(color1, color2, wave1 * 0.3); // Weniger intensive Mischung
+            finalColor = mix(finalColor, color3, wave2 * 0.2);
+            finalColor = mix(finalColor, vec3(0.1), wave3 * 0.1); // Leichte Abdunkelung
 
-            vec3 finalColor = mix(color1, color2, wave1 * 0.618); // Goldener Schnitt
-            finalColor = mix(finalColor, color3, wave2 * 0.382); // 1 - Goldener Schnitt
-            finalColor = mix(finalColor, vec3(1.0), wave3 * 0.2); // Leichte Aufhellung
-
-            // Fibonacci-Spirale Muster
-            float spiralPattern = smoothstep(0.4, 0.41, abs(fract(spiralSt.x * 10.0 + spiralSt.y * 15.0 + u_time * 0.2) - 0.5));
-            finalColor = mix(finalColor, vec3(1.0), spiralPattern * 0.3);
+            // Minimalistische Linien-Muster hinzufügen
+            float lines = 0.0;
+            
+            // Horizontale Linien (sehr subtil)
+            lines += linePattern(st, 0.0, 0.15, 0.002) * 0.3;
+            
+            // Vertikale Linien (sehr subtil)
+            lines += linePattern(st, 1.57, 0.15, 0.002) * 0.3;
+            
+            // Diagonale Linien (sehr subtil)
+            lines += linePattern(st, 0.785, 0.2, 0.0015) * 0.2;
+            lines += linePattern(st, -0.785, 0.2, 0.0015) * 0.2;
+            
+            // Linien zu den Farben hinzufügen (leicht aufgehellt)
+            vec3 lineColor = finalColor + vec3(0.15);
+            finalColor = mix(finalColor, lineColor, lines);
 
             // Sanfte Vignette
-            float vignette = 1.0 - smoothstep(0.0, 1.0, length(st - 0.5) * 1.5);
-            finalColor = mix(finalColor, finalColor * 0.8, vignette * 0.2);
+            float vignette = 1.0 - smoothstep(0.0, 1.0, length(st - 0.5) * 1.2);
+            finalColor = finalColor * vignette;
 
             gl_FragColor = vec4(finalColor, 1.0);
         }
