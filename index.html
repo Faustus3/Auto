@@ -20,20 +20,27 @@
     <div class="neon-glow"></div>
     <div class="container">
         <div class="welcome-section">
-            <h1>Willkommen auf Ihrer privaten Website!</h1>
-            <p>Hier können Sie Ihre privaten Dateien sicher speichern und verwalten.</p>
+            <h1>Willkommen auf Finn's Privater Website!</h1>
+            <p>Hier speichert er seine privaten Daten und Ideen</p>
         </div>
         <!-- Größere Kachel für Website-Link -->
         <div class="website-link-section">
-            <h2>Besuchen Sie unsere Website</h2>
-            <p>Entdecken Sie mehr auf unserer Hauptseite</p>
+            <h2>Meine Künstlerische Arbeit</h2>
+            <p>Entdecken Sie meine kreativen Projekte und künstlerischen Werke</p>
             <a href="https://sohaltweil.github.io/Web/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnlYzymj9_2q_9iEO0I60dL7WUbMHPEeNDBmuNus3Vx2fF6-_cVoC3vH8Qqmw&brid=JPs8WjXFIH4Qoqx6Fd0Naw" 
                target="_blank" class="website-button">
-                Zur Website
+                Zur Öffentlichen Website
             </a>
         </div>
         <div class="login-section">
             <h2>Anmelden</h2>
+            <div style="background: rgba(0, 212, 255, 0.1); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid var(--neon-blue);">
+                <p style="margin: 0; color: var(--neon-blue); font-size: 0.9rem;">
+                    <strong>Anmeldeinformationen:</strong><br>
+                    Benutzername: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.2rem;">test</code><br>
+                    Passwort: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 0.2rem;">test</code>
+                </p>
+            </div>
             <form id="loginForm">
                 <div class="form-group">
                     <label for="username">Benutzername:</label>
@@ -46,6 +53,28 @@
                 <button type="submit">Anmelden</button>
             </form>
             <p id="loginMessage" class="message"></p>
+        </div>
+        <!-- Notizblock Sektion -->
+        <div class="notes-section">
+            <h2>Notizen & Ideen</h2>
+            <div class="notes-container">
+                <div class="note-item">
+                    <h3>Kreative Ideen</h3>
+                    <p>Hier können Sie Ihre kreativen Ideen und Gedanken festhalten...</p>
+                    <small>Erstellt: Heute</small>
+                </div>
+                <div class="note-item">
+                    <h3>Projekt Notizen</h3>
+                    <p>Wichtige Punkte für aktuelle Projekte...</p>
+                    <small>Erstellt: Gestern</small>
+                </div>
+                <div class="note-item">
+                    <h3>Inspiration</h3>
+                    <p>Quellen und Ideen für zukünftige Arbeiten...</p>
+                    <small>Erstellt: Vor 2 Tagen</small>
+                </div>
+            </div>
+            <button class="add-note-btn">Neue Notiz hinzufügen</button>
         </div>
         <div class="private-files-section" style="display: none;">
             <h2>Ihre privaten Dateien</h2>
