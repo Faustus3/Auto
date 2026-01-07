@@ -405,6 +405,7 @@ FADE OUT."></textarea>
             try {
                 const response = await fetch('http://localhost:11434/api/generate', {
                     method: 'POST',
+                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },
