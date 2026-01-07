@@ -784,6 +784,95 @@ button:active {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
 
+/* SCRIPT ENGINE SECTION */
+.script-engine-section {
+    margin-top: var(--fib-spacing-3);
+    margin-bottom: var(--fib-spacing-3);
+    padding: var(--fib-spacing-3);
+    background: linear-gradient(135deg, var(--fib-pastel-5), var(--fib-pastel-3));
+    border-radius: 0.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.6s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.script-engine-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0.5;
+    z-index: 0;
+}
+
+.script-engine-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.script-engine-section h2 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    margin-bottom: var(--fib-spacing-2);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.script-engine-section p {
+    color: #34495e;
+    font-size: 1.1rem;
+    margin-bottom: var(--fib-spacing-3);
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+}
+
+.script-engine-button {
+    display: inline-block;
+    padding: var(--fib-spacing-1) var(--fib-spacing-2);
+    background: linear-gradient(135deg, var(--fib-pastel-8), var(--fib-pastel-5));
+    color: white;
+    text-decoration: none;
+    border-radius: 0.3rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.script-engine-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: -1;
+}
+
+.script-engine-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    color: white;
+}
+
+.script-engine-button:hover::before {
+    transform: translateX(100%);
+}
+
 /* Responsive Design mit Fibonacci-Proportionen */
 @media (max-width: 768px) {
     .container {
