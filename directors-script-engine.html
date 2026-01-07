@@ -420,10 +420,24 @@ FADE OUT."></textarea>
                 }
                 
                 const data = await response.json();
-                return data.response;
+                
+                // Debug: Log the response to see its structure
+                console.log('Ollama Response:', data);
+                
+                // Check if response exists and has the correct property
+                if (data && data.response) {
+                    return data.response;
+                } else if (data && data.text) {
+                    return data.text;
+                } else if (data && typeof data === 'string') {
+                    return data;
+                } else {
+                    console.error('Unexpected response format:', data);
+                    return 'Unerwartetes Antwortformat von Ollama';
+                }
             } catch (error) {
                 console.error('Ollama API Error:', error);
-                return `Fehler bei der Verbindung zu Ollama: ${error.message}`;
+                return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass Ollama läuft und das Modell 'llama3.2' verfügbar ist.`;
             }
         }
 
