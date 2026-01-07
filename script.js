@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Notizen aus localStorage laden
     let notes = JSON.parse(localStorage.getItem('finn-notes')) || [];
+    
+    // Blog-Artikel aus localStorage laden
+    let blogPosts = JSON.parse(localStorage.getItem('finn-blog-posts')) || [];
+    let currentUser = '';
 
     // --- GLSL Background Animation ---
     const gl = glCanvas.getContext('webgl');
@@ -179,12 +183,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Einfache Frontend-Validierung (für Demonstrationszwecke)
         if ((username === 'Finn' || username === 'Dani') && password === 'test') {
+            currentUser = username;
             loginMessage.textContent = 'Anmeldung erfolgreich!';
             loginMessage.className = 'message success';
             welcomeSection.style.display = 'none';
             loginSection.style.display = 'none';
             websiteLinkSection.style.display = 'none';
             privateFilesSection.style.display = 'block';
+            
+            // Blog-Artikel anzeigen
+            renderBlogPosts();
         } else {
             loginMessage.textContent = 'Ungültiger Benutzername oder Passwort.';
             loginMessage.className = 'message error';
@@ -262,6 +270,195 @@ document.addEventListener('DOMContentLoaded', () => {
         loginSection.style.display = 'block';
         websiteLinkSection.style.display = 'block';
         privateFilesSection.style.display = 'none';
+    });
+    
+    // --- Blog Functionality ---
+    const addBlogBtn = document.querySelector('.add-blog-btn');
+    const toggleBlogViewBtn = document.querySelector('.toggle-blog-view');
+    const blogEditor = document.querySelector('.blog-editor');
+    const blogPostsContainer = document.querySelector('.blog-posts-container');
+    const saveBlogBtn = document.getElementById('saveBlogBtn');
+    const cancelBlogBtn = document.getElementById('cancelBlogBtn');
+    const blogTitleInput = document.getElementById('blogTitle');
+    const blogContentInput = document.getElementById('blogContent');
+    const blogTagsInput = document.getElementById('blogTags');
+    const blogSearchInput = document.getElementById('blogSearch');
+    
+    let isEditingBlog = false;
+    let editingBlogId = null;
+    let showAllPosts = false;
+    let searchQuery = '';
+    
+    // Blog-Editor anzeigen
+    addBlogBtn.addEventListener('click', () => {
+        blogEditor.style.display = 'block';
+        addBlogBtn.style.display = 'none';
+        blogTitleInput.value = '';
+        blogContentInput.value = '';
+        blogTagsInput.value = '';
+        isEditingBlog = false;
+        editingBlogId = null;
+    });
+    
+    // Blog-Editor ausblenden
+    cancelBlogBtn.addEventListener('click', () => {
+        blogEditor.style.display = 'none';
+        addBlogBtn.style.display = 'inline-block';
+        blogTitleInput.value = '';
+        blogContentInput.value = '';
+        blogTagsInput.value = '';
+        isEditingBlog = false;
+        editingBlogId = null;
+    });
+    
+    // Blog-Artikel speichern
+    saveBlogBtn.addEventListener('click', () => {
+        const title = blogTitleInput.value.trim();
+        const content = blogContentInput.value.trim();
+        const tags = blogTagsInput.value.trim();
+        
+        if (!title || !content) {
+            alert('Titel und Inhalt sind erforderlich!');
+            return;
+        }
+        
+        const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+        
+        if (isEditingBlog && editingBlogId !== null) {
+            // Artikel bearbeiten
+            blogPosts[editingBlogId] = {
+                ...blogPosts[editingBlogId],
+                title: title,
+                content: content,
+                tags: tagsArray,
+                lastModified: new Date().toLocaleDateString('de-DE')
+            };
+        } else {
+            // Neuer Artikel
+            const newPost = {
+                id: Date.now(),
+                title: title,
+                content: content,
+                tags: tagsArray,
+                author: currentUser,
+                date: new Date().toLocaleDateString('de-DE'),
+                lastModified: new Date().toLocaleDateString('de-DE')
+            };
+            blogPosts.unshift(newPost);
+        }
+        
+        localStorage.setItem('finn-blog-posts', JSON.stringify(blogPosts));
+        renderBlogPosts();
+        
+        blogEditor.style.display = 'none';
+        addBlogBtn.style.display = 'inline-block';
+        blogTitleInput.value = '';
+        blogContentInput.value = '';
+        blogTagsInput.value = '';
+        isEditingBlog = false;
+        editingBlogId = null;
+    });
+    
+    // Blog-Artikel rendern
+    function renderBlogPosts() {
+        blogPostsContainer.innerHTML = '';
+        
+        let postsToShow = blogPosts;
+        
+        // Suche anwenden
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            postsToShow = postsToShow.filter(post => 
+                post.title.toLowerCase().includes(query) ||
+                post.content.toLowerCase().includes(query) ||
+                post.tags.some(tag => tag.toLowerCase().includes(query)) ||
+                post.author.toLowerCase().includes(query)
+            );
+        }
+        
+        // Begrenzung anwenden
+        if (!showAllPosts) {
+            postsToShow = postsToShow.slice(0, 3);
+        }
+        
+        if (postsToShow.length === 0) {
+            const message = searchQuery ? 
+                'Keine Artikel gefunden, die Ihrer Suche entsprechen.' : 
+                'Noch keine Blog-Artikel vorhanden.';
+            blogPostsContainer.innerHTML = `<p style="text-align: center; color: #777; font-style: italic;">${message}</p>`;
+            return;
+        }
+        
+        postsToShow.forEach((post, index) => {
+            const postElement = createBlogPostElement(post, index);
+            blogPostsContainer.appendChild(postElement);
+        });
+    }
+    
+    // Blog-Artikel-Element erstellen
+    function createBlogPostElement(post, index) {
+        const postElement = document.createElement('div');
+        postElement.className = 'blog-post';
+        
+        const tagsHtml = post.tags.map(tag => `<span class="blog-tag">${tag}</span>`).join('');
+        
+        postElement.innerHTML = `
+            <h3>${post.title}</h3>
+            <p>${post.content}</p>
+            <div class="blog-meta">
+                <div class="blog-tags">${tagsHtml}</div>
+                <div>
+                    <span class="blog-author">von ${post.author}</span>
+                    <span class="blog-date">am ${post.date}</span>
+                </div>
+            </div>
+            ${post.author === currentUser ? `
+                <div class="blog-actions">
+                    <button class="edit-blog-btn" onclick="editBlogPost(${post.id})">Bearbeiten</button>
+                    <button class="delete-blog-btn" onclick="deleteBlogPost(${post.id})">Löschen</button>
+                </div>
+            ` : ''}
+        `;
+        
+        return postElement;
+    }
+    
+    // Blog-Artikel bearbeiten
+    window.editBlogPost = function(postId) {
+        const postIndex = blogPosts.findIndex(post => post.id === postId);
+        if (postIndex === -1) return;
+        
+        const post = blogPosts[postIndex];
+        blogTitleInput.value = post.title;
+        blogContentInput.value = post.content;
+        blogTagsInput.value = post.tags.join(', ');
+        
+        blogEditor.style.display = 'block';
+        addBlogBtn.style.display = 'none';
+        isEditingBlog = true;
+        editingBlogId = postIndex;
+    };
+    
+    // Blog-Artikel löschen
+    window.deleteBlogPost = function(postId) {
+        if (confirm('Blog-Artikel wirklich löschen?')) {
+            blogPosts = blogPosts.filter(post => post.id !== postId);
+            localStorage.setItem('finn-blog-posts', JSON.stringify(blogPosts));
+            renderBlogPosts();
+        }
+    };
+    
+    // Blog-Suche
+    blogSearchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.trim();
+        renderBlogPosts();
+    });
+    
+    // Blog-Ansicht umschalten
+    toggleBlogViewBtn.addEventListener('click', () => {
+        showAllPosts = !showAllPosts;
+        toggleBlogViewBtn.textContent = showAllPosts ? 'Neueste Artikel anzeigen' : 'Alle Artikel anzeigen';
+        renderBlogPosts();
     });
     
     // Globale Funktionen für contenteditable
