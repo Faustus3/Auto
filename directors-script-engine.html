@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Director's Script Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier Prime', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Linke Spalte - The Bible */
+        .bible-panel {
+            width: 25%;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .bible-panel h2 {
+            color: #8b9dc3;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .bible-section {
+            margin-bottom: 25px;
+        }
+
+        .bible-section h3 {
+            color: #a0a0a0;
+            font-size: 14px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .bible-textarea {
+            width: 100%;
+            min-height: 120px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            color: #c0c0c0;
+            padding: 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .bible-textarea:focus {
+            outline: none;
+            border-color: #8b9dc3;
+        }
+
+        /* Mittlere Spalte - The Script */
+        .script-panel {
+            width: 50%;
+            background: #0f0f0f;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .script-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            background: #1a1a1a;
+        }
+
+        .script-header h2 {
+            color: #c73e1d;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .script-editor {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .script-textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        .script-textarea:focus {
+            outline: none;
+        }
+
+        /* Rechte Spalte - The Dramaturg */
+        .dramaturg-panel {
+            width: 25%;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dramaturg-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .dramaturg-header h2 {
+            color: #8b9dc3;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .smart-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .action-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 12px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-btn:hover {
+            background: #c73e1d;
+            border-color: #c73e1d;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-height: 300px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background: #2a2a2a;
+            border-left: 3px solid #8b9dc3;
+        }
+
+        .ai-message {
+            background: #1a3a2a;
+            border-left: 3px solid #4a9d4a;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #8b9dc3;
+        }
+
+        .send-btn {
+            background: #c73e1d;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .send-btn:hover {
+            background: #d84e2d;
+        }
+
+        .export-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 10px;
+            margin: 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .export-btn:hover {
+            background: #8b9dc3;
+            border-color: #8b9dc3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Linke Spalte - The Bible -->
+        <div class="bible-panel">
+            <h2>The Bible</h2>
+            
+            <div class="bible-section">
+                <h3>Charaktere</h3>
+                <textarea class="bible-textarea" id="characters" placeholder="CHARAKTERNAME&#10;Alter:&#10;Aussehen:&#10;Persönlichkeit:&#10;Motivation:&#10;Hintergrund:"></textarea>
+            </div>
+            
+            <div class="bible-section">
+                <h3>Drehorte</h3>
+                <textarea class="bible-textarea" id="locations" placeholder="ORT&#10;Beschreibung:&#10;Atmosphäre:&#10;Bedeutung:"></textarea>
+            </div>
+            
+            <div class="bible-section">
+                <h3>Hintergründe</h3>
+                <textarea class="bible-textarea" id="background" placeholder="WELT/ZEIT&#10;Regeln:&#10;Konflikte:&#10;Themen:"></textarea>
+            </div>
+        </div>
+        
+        <!-- Mittlere Spalte - The Script -->
+        <div class="script-panel">
+            <div class="script-header">
+                <h2>The Script</h2>
+            </div>
+            <div class="script-editor">
+                <textarea class="script-textarea" id="script" placeholder="FADE IN:
+
+EXT. ORT - TAG
+
+Eine Beschreibung der Szene.
+
+                        CHARAKTER
+            Dialogtext hier.
+
+                        ANDERER CHARAKTER
+            Antwort hier.
+
+FADE OUT."></textarea>
+            </div>
+        </div>
+        
+        <!-- Rechte Spalte - The Dramaturg -->
+        <div class="dramaturg-panel">
+            <div class="dramaturg-header">
+                <h2>Directorial Notes</h2>
+            </div>
+            
+            <div class="smart-actions">
+                <button class="action-btn" id="analyzeScene">Szene analysieren</button>
+                <button class="action-btn" id="dialogCheck">Dialog-Check</button>
+                <button class="action-btn" id="continueWriting">Weiterschreiben</button>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai-message">
+                        Willkommen bei der Director's Script Engine. Ich bin Ihr Script-Consultant und helfe Ihnen bei der Entwicklung Ihres Drehbuchs. Stellen Sie mir Fragen oder nutzen Sie die Smart Actions für gezielte Analysen.
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Frage an den Dramaturgen...">
+                    <button class="send-btn" id="sendMessageBtn">Senden</button>
+                </div>
+            </div>
+            
+            <button class="export-btn" id="exportBtn">Arbeit exportieren</button>
+        </div>
+    </div>
+
+    <script>
+        // IndexedDB für Datenpersistenz
+        const DB_NAME = 'DirectorsScriptEngine';
+        const DB_VERSION = 1;
+        let db;
+
+        // IndexedDB initialisieren
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('scriptData')) {
+                        db.createObjectStore('scriptData');
+                    }
+                };
+            });
+        }
+
+        // Daten speichern
+        async function saveData(key, data) {
+            if (!db) await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['scriptData'], 'readwrite');
+                const store = transaction.objectStore('scriptData');
+                const request = store.put(data, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Daten laden
+        async function loadData(key) {
+            if (!db) await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['scriptData'], 'readonly');
+                const store = transaction.objectStore('scriptData');
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Alle Daten laden
+        async function loadAllData() {
+            const characters = await loadData('characters') || '';
+            const locations = await loadData('locations') || '';
+            const background = await loadData('background') || '';
+            const script = await loadData('script') || '';
+            
+            document.getElementById('characters').value = characters;
+            document.getElementById('locations').value = locations;
+            document.getElementById('background').value = background;
+            document.getElementById('script').value = script;
+        }
+
+        // Auto-Save Funktion
+        function setupAutoSave() {
+            const elements = ['characters', 'locations', 'background', 'script'];
+            
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                element.addEventListener('input', () => {
+                    saveData(id, element.value);
+                });
+            });
+        }
+
+        // Ollama API Call
+        async function callOllama(prompt, context) {
+            try {
+                const response = await fetch('http://localhost:11434/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama3.2',
+                        prompt: `${context}\n\n${prompt}`,
+                        stream: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.response;
+            } catch (error) {
+                console.error('Ollama API Error:', error);
+                return `Fehler bei der Verbindung zu Ollama: ${error.message}`;
+            }
+        }
+
+        // Nachricht zum Chat hinzufügen
+        function addMessage(text, isUser = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Smart Actions
+        document.getElementById('analyzeScene').addEventListener('click', async () => {
+            const script = document.getElementById('script').value;
+            const characters = document.getElementById('characters').value;
+            const locations = document.getElementById('locations').value;
+            const background = document.getElementById('background').value;
+            
+            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+            
+            addMessage('Analysiere Szene...', true);
+            
+            const prompt = 'Analysiere diese Szene auf Pacing, Spannungsbogen und Subtext. Gib konstruktive Hinweise für die Regie.';
+            const response = await callOllama(prompt, context);
+            
+            addMessage(response);
+        });
+
+        document.getElementById('dialogCheck').addEventListener('click', async () => {
+            const script = document.getElementById('script').value;
+            const characters = document.getElementById('characters').value;
+            
+            const context = `CHARACTERS:\n${characters}\n\nSCRIPT:\n${script}`;
+            
+            addMessage('Prüfe Dialoge...', true);
+            
+            const prompt = 'Prüfe, ob die Dialoge der Charaktere konsistent mit ihren beschriebenen Persönlichkeiten sind. Gib spezifische Hinweise für jeden Charakter.';
+            const response = await callOllama(prompt, context);
+            
+            addMessage(response);
+        });
+
+        document.getElementById('continueWriting').addEventListener('click', async () => {
+            const script = document.getElementById('script').value;
+            const characters = document.getElementById('characters').value;
+            const locations = document.getElementById('locations').value;
+            const background = document.getElementById('background').value;
+            
+            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+            
+            addMessage('Schreibe weiter...', true);
+            
+            const prompt = 'Schlage die nächsten 5-10 Zeilen des Drehbuchs vor, die sich nahtlos an die letzte Szene anschließen. Halte dich an das Format und die Charaktere.';
+            const response = await callOllama(prompt, context);
+            
+            addMessage(response);
+        });
+
+        // Chat-Funktionalität
+        document.getElementById('sendMessageBtn').addEventListener('click', async () => {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            const script = document.getElementById('script').value;
+            const characters = document.getElementById('characters').value;
+            const locations = document.getElementById('locations').value;
+            const background = document.getElementById('background').value;
+            
+            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+            
+            const response = await callOllama(message, context);
+            addMessage(response);
+        });
+
+        // Enter-Taste für Chat
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendMessageBtn').click();
+            }
+        });
+
+        // Export-Funktion
+        document.getElementById('exportBtn').addEventListener('click', async () => {
+            const characters = document.getElementById('characters').value;
+            const locations = document.getElementById('locations').value;
+            const background = document.getElementById('background').value;
+            const script = document.getElementById('script').value;
+            
+            const exportData = {
+                characters: characters,
+                locations: locations,
+                background: background,
+                script: script,
+                exportedAt: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `script-export-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            addMessage('Arbeit wurde als JSON exportiert.', false);
+        });
+
+        // Initialisierung
+        window.addEventListener('load', async () => {
+            await initDB();
+            await loadAllData();
+            setupAutoSave();
+        });
+    </script>
+</body>
+</html>
