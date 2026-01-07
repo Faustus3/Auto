@@ -20,8 +20,8 @@
     <div class="neon-glow"></div>
     <div class="container">
         <div class="welcome-section">
-            <h1>Willkommen auf Finn's Privater Website!</h1>
-            <p>Hier speichert er seine privaten Daten und Ideen</p>
+            <h1>Willkommen auf Finn's Website!</h1>
+            <p>Hier können Finn und Dani gemeinsam bloggen, Notizen erstellen und Ideen teilen</p>
         </div>
         <!-- Größere Kachel für Website-Link -->
         <div class="website-link-section">
@@ -48,6 +48,31 @@
             <p id="loginMessage" class="message"></p>
         </div>
         <div class="private-files-section" style="display: none;">
+            <!-- Blog-Sektion -->
+            <div class="blog-section">
+                <h2>Blog</h2>
+                <div class="blog-controls">
+                    <button class="add-blog-btn">Neuer Blog-Artikel</button>
+                    <button class="toggle-blog-view">Alle Artikel anzeigen</button>
+                </div>
+                <div class="blog-search">
+                    <input type="text" id="blogSearch" placeholder="Blog durchsuchen..." class="blog-search-input">
+                </div>
+                <div class="blog-editor" style="display: none;">
+                    <h3>Neuer Artikel</h3>
+                    <input type="text" id="blogTitle" placeholder="Titel..." class="blog-title-input">
+                    <textarea id="blogContent" placeholder="Inhalt..." rows="10" class="blog-content-input"></textarea>
+                    <input type="text" id="blogTags" placeholder="Tags (durch Komma getrennt)..." class="blog-tags-input">
+                    <div class="blog-editor-buttons">
+                        <button id="saveBlogBtn">Speichern</button>
+                        <button id="cancelBlogBtn">Abbrechen</button>
+                    </div>
+                </div>
+                <div class="blog-posts-container">
+                    <!-- Hier werden Blog-Artikel angezeigt -->
+                </div>
+            </div>
+            
             <!-- Notizblock Sektion -->
             <div class="notes-section">
                 <h2>Notizen & Ideen</h2>
