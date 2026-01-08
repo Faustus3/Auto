@@ -1,0 +1,20 @@
+{
+  "name": "auto",
+  "version": "1.0.0",
+  "description": "Dieses Repository enthält das Frontend für die Instagram-Automatisierungslösung.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Faustus3/Auto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Faustus3/Auto/issues"
+  },
+  "homepage": "https://github.com/Faustus3/Auto#readme"
+}
