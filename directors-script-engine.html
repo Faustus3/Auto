@@ -34,7 +34,10 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
+            height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
         }
 
         .bible-panel h2 {
@@ -1020,9 +1023,31 @@ FADE OUT."></textarea>
 
         // Neuer Charakter Button
         document.getElementById('addCharacterBtn').addEventListener('click', () => {
+            console.log('Neuer Charakter Button geklickt');
             addCharacter();
             addMessage('Neuer Charakter wurde zur Bible hinzugefügt.', false);
         });
+
+        // Memory Bank Status überprüfen
+        async function checkMemoryBank() {
+            const memoryStatus = {
+                characters: characters.length,
+                locations: (await loadData('locations') || '').length,
+                background: (await loadData('background') || '').length,
+                script: (await loadData('script') || '').length,
+                totalEntries: 0
+            };
+
+            memoryStatus.totalEntries = memoryStatus.characters +
+                                       (memoryStatus.locations > 0 ? 1 : 0) +
+                                       (memoryStatus.background > 0 ? 1 : 0) +
+                                       (memoryStatus.script > 0 ? 1 : 0);
+
+            console.log('Memory Bank Status:', memoryStatus);
+            addMessage(`Memory Bank: ${memoryStatus.characters} Charaktere, ${memoryStatus.totalEntries} Einträge gespeichert.`, false);
+
+            return memoryStatus;
+        }
 
         // URL Eingabe beim Laden mit aktueller URL füllen
         window.addEventListener('load', async () => {
@@ -1033,6 +1058,9 @@ FADE OUT."></textarea>
             // Aktuelle Ollama URL anzeigen
             const currentUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
             document.getElementById('ollamaUrlInput').placeholder = `Aktuell: ${currentUrl}`;
+
+            // Memory Bank Status nach dem Laden überprüfen
+            setTimeout(checkMemoryBank, 1000);
         });
     </script>
 </body>
