@@ -566,17 +566,20 @@ FADE OUT."></textarea>
 
         // Alle Daten laden
         async function loadAllData() {
-            const characters = await loadData('characters') || '';
             const locations = await loadData('locations') || '';
             const background = await loadData('background') || '';
             const script = await loadData('script') || '';
 
-            document.getElementById('characters').value = characters;
-            document.getElementById('locations').value = locations;
-            document.getElementById('background').value = background;
-            document.getElementById('script').value = script;
+            // Sicherheitsprüfungen für DOM-Elemente
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+            const scriptElement = document.getElementById('script');
 
-            // Charakter-Kacheln laden
+            if (locationsElement) locationsElement.value = locations;
+            if (backgroundElement) backgroundElement.value = background;
+            if (scriptElement) scriptElement.value = script;
+
+            // Charakter-Kacheln laden (ersetzt das alte characters textarea)
             await loadCharacters();
         }
 
@@ -726,13 +729,15 @@ FADE OUT."></textarea>
 
         // Auto-Save Funktion
         function setupAutoSave() {
-            const elements = ['characters', 'locations', 'background', 'script'];
-            
+            const elements = ['locations', 'background', 'script'];
+
             elements.forEach(id => {
                 const element = document.getElementById(id);
-                element.addEventListener('input', () => {
-                    saveData(id, element.value);
-                });
+                if (element) {
+                    element.addEventListener('input', () => {
+                        saveData(id, element.value);
+                    });
+                }
             });
         }
 
