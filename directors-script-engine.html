@@ -38,6 +38,19 @@
             overflow-y: auto;
             overflow-x: hidden;
             position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .bible-panel.collapsed {
+            width: 60px;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .bible-panel.collapsed h2,
+        .bible-panel.collapsed .bible-section,
+        .bible-panel.collapsed .add-character-btn {
+            display: none;
         }
 
         .bible-panel h2 {
@@ -228,6 +241,11 @@
             border-right: 1px solid #333;
             display: flex;
             flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .script-panel.expanded {
+            width: 80%;
         }
 
         .script-header {
@@ -271,6 +289,11 @@
             background: #1a1a1a;
             display: flex;
             flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .dramaturg-panel.expanded {
+            width: 40%;
         }
 
         .dramaturg-header {
@@ -364,7 +387,25 @@
             background: #0f0f0f;
             border: 1px solid #333;
             border-radius: 4px;
-            min-height: 300px;
+            min-height: 200px;
+            max-height: 50vh;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #8b9dc3;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #c73e1d;
         }
 
         .message {
@@ -437,6 +478,83 @@
         .export-btn:hover {
             background: #8b9dc3;
             border-color: #8b9dc3;
+        }
+
+        /* Upload Button */
+        .upload-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 10px;
+            margin: 0 20px 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: calc(100% - 40px);
+        }
+
+        .upload-btn:hover {
+            background: #4a6a4a;
+            border-color: #4a6a4a;
+        }
+
+        /* File Input (versteckt) */
+        .file-input {
+            display: none;
+        }
+
+        /* Upload Status */
+        .upload-status {
+            padding: 10px;
+            margin: 0 20px 20px;
+            background: #1a3a2a;
+            border: 1px solid #4a9d4a;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .upload-status.success {
+            background: #1a3a2a;
+            border-color: #4a9d4a;
+            color: #e0e0e0;
+        }
+
+        .upload-status.error {
+            background: #3a1a1a;
+            border-color: #c73e1d;
+            color: #e0e0e0;
+        }
+
+        /* Upload Progress */
+        .upload-progress {
+            padding: 10px;
+            margin: 0 20px 20px;
+            background: #1a2a3a;
+            border: 1px solid #8b9dc3;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #0f0f0f;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #8b9dc3;
+            width: 0%;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
@@ -515,6 +633,17 @@ FADE OUT."></textarea>
             </div>
             
             <button class="export-btn" id="exportBtn">Arbeit exportieren</button>
+            
+            <!-- Upload Section -->
+            <input type="file" class="file-input" id="fileInput" accept=".json,.txt,.doc,.docx">
+            <button class="upload-btn" id="uploadBtn">Knowledge Base importieren (.json, .txt, .doc, .docx)</button>
+            <div class="upload-progress" id="uploadProgress">
+                <div>Konvertierung läuft...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            <div class="upload-status" id="uploadStatus"></div>
         </div>
     </div>
 
@@ -1049,11 +1178,370 @@ FADE OUT."></textarea>
             return memoryStatus;
         }
 
+        // Auto-Expand Funktion für Panels basierend auf Cursor-Position
+        function setupAutoExpand() {
+            const container = document.querySelector('.container');
+            const biblePanel = document.querySelector('.bible-panel');
+            const scriptPanel = document.querySelector('.script-panel');
+            const dramaturgPanel = document.querySelector('.dramaturg-panel');
+
+            let isMouseInside = false;
+            let mouseX = 0;
+
+            container.addEventListener('mouseenter', () => {
+                isMouseInside = true;
+            });
+
+            container.addEventListener('mouseleave', () => {
+                isMouseInside = false;
+                // Reset all panels to normal size
+                biblePanel.classList.remove('collapsed');
+                scriptPanel.classList.remove('expanded');
+                dramaturgPanel.classList.remove('expanded');
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isMouseInside) return;
+
+                mouseX = e.clientX;
+                const containerWidth = container.offsetWidth;
+                const relativeX = mouseX / containerWidth;
+
+                // Reset all panels first
+                biblePanel.classList.remove('collapsed');
+                scriptPanel.classList.remove('expanded');
+                dramaturgPanel.classList.remove('expanded');
+
+                // Expand panels based on cursor position
+                if (relativeX < 0.25) {
+                    // Cursor in left third - expand Bible
+                    biblePanel.classList.remove('collapsed');
+                    scriptPanel.classList.remove('expanded');
+                    dramaturgPanel.classList.remove('expanded');
+                } else if (relativeX < 0.75) {
+                    // Cursor in middle third - expand Script
+                    biblePanel.classList.add('collapsed');
+                    scriptPanel.classList.add('expanded');
+                    dramaturgPanel.classList.remove('expanded');
+                } else {
+                    // Cursor in right third - expand Dramaturg
+                    biblePanel.classList.add('collapsed');
+                    scriptPanel.classList.remove('expanded');
+                    dramaturgPanel.classList.add('expanded');
+                }
+            });
+        }
+
+        // Verbesserte Chat-Funktionalität mit Hintergrundinfos
+        function enhanceChat() {
+            const chatInput = document.getElementById('chatInput');
+            
+            // Platzhalter mit erweiterten Vorschlägen
+            const placeholders = [
+                'Frage an den Dramaturgen...',
+                'Frage zu Charakteren, Orten oder Hintergründen...',
+                'Bitte analysiere die aktuelle Szene...',
+                'Wie kann ich den Dialog verbessern?...',
+                'Erstelle einen Steckbrief für [Charaktername]...'
+            ];
+            
+            let placeholderIndex = 0;
+            chatInput.placeholder = placeholders[placeholderIndex];
+            
+            // Platzhalter rotieren alle 5 Sekunden
+            setInterval(() => {
+                placeholderIndex = (placeholderIndex + 1) % placeholders.length;
+                if (!chatInput.matches(':focus')) {
+                    chatInput.placeholder = placeholders[placeholderIndex];
+                }
+            }, 5000);
+        }
+
+        // Upload-Funktion für Knowledge Base mit erweiterter Unterstützung
+        function setupUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+
+            // Upload Button klicken löst File Input aus
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // File Input ändert sich
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Unterstützte Dateiformate
+                const supportedFormats = ['.json', '.txt', '.doc', '.docx'];
+                const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+                if (!supportedFormats.includes(fileExtension)) {
+                    showUploadStatus(`Nur ${supportedFormats.join(', ')} Dateien sind erlaubt!`, 'error');
+                    return;
+                }
+
+                try {
+                    // Fortschrittsanzeige anzeigen
+                    uploadProgress.style.display = 'block';
+                    uploadStatus.style.display = 'none';
+                    updateProgress(10);
+
+                    let data;
+
+                    if (fileExtension === '.json') {
+                        // JSON-Datei direkt verarbeiten
+                        updateProgress(30);
+                        const text = await file.text();
+                        updateProgress(60);
+                        data = JSON.parse(text);
+                        updateProgress(80);
+
+                        // Datenvalidierung
+                        if (!validateImportData(data)) {
+                            showUploadStatus('Ungültiges JSON-Format!', 'error');
+                            uploadProgress.style.display = 'none';
+                            return;
+                        }
+                    } else {
+                        // Text- oder Word-Datei konvertieren
+                        updateProgress(20);
+                        const text = await readTextFile(file, fileExtension);
+                        updateProgress(50);
+                        data = await convertTextToStructure(text);
+                        updateProgress(80);
+                    }
+
+                    // Daten importieren
+                    await importData(data);
+                    updateProgress(100);
+
+                    showUploadStatus('Knowledge Base erfolgreich importiert!', 'success');
+                    addMessage('Knowledge Base wurde erfolgreich importiert und konvertiert.', false);
+
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showUploadStatus(`Fehler beim Import: ${error.message}`, 'error');
+                } finally {
+                    // Fortschrittsanzeige ausblenden
+                    setTimeout(() => {
+                        uploadProgress.style.display = 'none';
+                        progressFill.style.width = '0%';
+                    }, 1000);
+                }
+            });
+        }
+
+        // Textdatei lesen (TXT, DOC, DOCX)
+        async function readTextFile(file, extension) {
+            if (extension === '.txt') {
+                return await file.text();
+            } else if (extension === '.doc' || extension === '.docx') {
+                // Für DOC/DOCX verwenden wir eine einfache Text-Extraktion
+                // In einer realen Anwendung würde man hier eine Bibliothek wie mammoth.js verwenden
+                return await file.text();
+            }
+        }
+
+        // Text in strukturierte Daten konvertieren
+        async function convertTextToStructure(text) {
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+            
+            const data = {
+                characterCards: [],
+                locations: '',
+                background: '',
+                script: ''
+            };
+
+            let currentSection = null;
+            let sectionContent = [];
+
+            lines.forEach(line => {
+                const lowerLine = line.toLowerCase();
+
+                // Sektionen erkennen
+                if (lowerLine.includes('charaktere') || lowerLine.includes('characters')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        saveSection(currentSection, sectionContent.join('\n'), data);
+                    }
+                    currentSection = 'characters';
+                    sectionContent = [];
+                } else if (lowerLine.includes('drehorte') || lowerLine.includes('locations') || lowerLine.includes('orte')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        saveSection(currentSection, sectionContent.join('\n'), data);
+                    }
+                    currentSection = 'locations';
+                    sectionContent = [];
+                } else if (lowerLine.includes('hintergrund') || lowerLine.includes('background') || lowerLine.includes('welt')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        saveSection(currentSection, sectionContent.join('\n'), data);
+                    }
+                    currentSection = 'background';
+                    sectionContent = [];
+                } else if (lowerLine.includes('script') || lowerLine.includes('drehbuch') || lowerLine.includes('szene')) {
+                    if (currentSection && sectionContent.length > 0) {
+                        saveSection(currentSection, sectionContent.join('\n'), data);
+                    }
+                    currentSection = 'script';
+                    sectionContent = [];
+                } else {
+                    sectionContent.push(line);
+                }
+            });
+
+            // Letzte Sektion speichern
+            if (currentSection && sectionContent.length > 0) {
+                saveSection(currentSection, sectionContent.join('\n'), data);
+            }
+
+            return data;
+        }
+
+        // Sektion speichern
+        function saveSection(section, content, data) {
+            switch (section) {
+                case 'characters':
+                    // Charaktere aus Text extrahieren
+                    const characterBlocks = content.split(/\n\s*\n/);
+                    characterBlocks.forEach(block => {
+                        if (block.trim()) {
+                            const character = parseCharacterFromText(block);
+                            if (character.name) {
+                                data.characterCards.push(character);
+                            }
+                        }
+                    });
+                    break;
+                case 'locations':
+                    data.locations = content;
+                    break;
+                case 'background':
+                    data.background = content;
+                    break;
+                case 'script':
+                    data.script = content;
+                    break;
+            }
+        }
+
+        // Charakter aus Text parsen
+        function parseCharacterFromText(text) {
+            const character = {
+                name: 'Unbekannter Charakter',
+                role: 'Charakter',
+                age: '',
+                appearance: '',
+                personality: '',
+                motivation: '',
+                background: '',
+                summary: ''
+            };
+
+            const lines = text.split('\n');
+            let firstLine = true;
+
+            lines.forEach(line => {
+                const lowerLine = line.toLowerCase();
+
+                if (firstLine) {
+                    character.name = line.trim();
+                    firstLine = false;
+                }
+
+                // Versuche, Informationen aus der Zeile zu extrahieren
+                if (lowerLine.includes('alter:') || lowerLine.includes('age:')) {
+                    character.age = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('aussehen:') || lowerLine.includes('appearance:')) {
+                    character.appearance = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('persönlichkeit:') || lowerLine.includes('personality:')) {
+                    character.personality = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('motivation:')) {
+                    character.motivation = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('hintergrund:') || lowerLine.includes('background:')) {
+                    character.background = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('rolle:') || lowerLine.includes('role:')) {
+                    character.role = line.split(':')[1]?.trim() || 'Charakter';
+                }
+            });
+
+            // Zusammenfassung erstellen
+            const ageInfo = character.age ? `${character.age} Jahre alt` : 'Alter unbekannt';
+            const personalityInfo = character.personality ? character.personality : 'Persönlichkeit nicht beschrieben';
+            character.summary = `${character.name} ist ${ageInfo}. ${personalityInfo}`;
+
+            return character;
+        }
+
+        // Fortschrittsanzeige aktualisieren
+        function updateProgress(percent) {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = `${percent}%`;
+        }
+
+        // Datenvalidierung für Import
+        function validateImportData(data) {
+            if (typeof data !== 'object' || data === null) {
+                return false;
+            }
+
+            // Prüfe, ob mindestens ein erwartetes Feld vorhanden ist
+            const validFields = ['characterCards', 'locations', 'background', 'script'];
+            return validFields.some(field => data.hasOwnProperty(field));
+        }
+
+        // Daten importieren
+        async function importData(data) {
+            // Charaktere importieren
+            if (Array.isArray(data.characterCards)) {
+                characters = data.characterCards;
+                await saveCharacters();
+                renderAllCharacters();
+            }
+
+            // Locations importieren
+            if (typeof data.locations === 'string') {
+                document.getElementById('locations').value = data.locations;
+                await saveData('locations', data.locations);
+            }
+
+            // Background importieren
+            if (typeof data.background === 'string') {
+                document.getElementById('background').value = data.background;
+                await saveData('background', data.background);
+            }
+
+            // Script importieren
+            if (typeof data.script === 'string') {
+                document.getElementById('script').value = data.script;
+                await saveData('script', data.script);
+            }
+        }
+
+        // Upload-Status anzeigen
+        function showUploadStatus(message, type) {
+            const uploadStatus = document.getElementById('uploadStatus');
+            uploadStatus.textContent = message;
+            uploadStatus.className = `upload-status ${type}`;
+            uploadStatus.style.display = 'block';
+
+            // Status nach 5 Sekunden ausblenden
+            setTimeout(() => {
+                uploadStatus.style.display = 'none';
+            }, 5000);
+        }
+
         // URL Eingabe beim Laden mit aktueller URL füllen
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
             setupAutoSave();
+            setupAutoExpand();
+            enhanceChat();
+            setupUpload();
 
             // Aktuelle Ollama URL anzeigen
             const currentUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
