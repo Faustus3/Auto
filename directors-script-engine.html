@@ -41,6 +41,23 @@
             transition: all 0.3s ease;
         }
 
+        .bible-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .bible-panel::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .bible-panel::-webkit-scrollbar-thumb {
+            background: #8b9dc3;
+            border-radius: 4px;
+        }
+
+        .bible-panel::-webkit-scrollbar-thumb:hover {
+            background: #c73e1d;
+        }
+
         .bible-panel.collapsed {
             width: 60px;
             padding: 10px;
@@ -121,6 +138,11 @@
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+        }
+
+        .character-card.editing {
+            border-color: #8b9dc3;
+            background: #1a2a3a;
         }
 
         .character-card:hover {
@@ -215,6 +237,10 @@
             color: #c73e1d;
         }
 
+        .character-edit-btn:hover {
+            color: #8b9dc3;
+        }
+
         .add-character-btn {
             background: #2a2a2a;
             border: 1px solid #444;
@@ -267,6 +293,23 @@
             overflow-y: auto;
         }
 
+        .script-editor::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .script-editor::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+
+        .script-editor::-webkit-scrollbar-thumb {
+            background: #c73e1d;
+            border-radius: 5px;
+        }
+
+        .script-editor::-webkit-scrollbar-thumb:hover {
+            background: #d84e2d;
+        }
+
         .script-textarea {
             width: 100%;
             height: 100%;
@@ -290,6 +333,24 @@
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .dramaturg-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dramaturg-panel::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .dramaturg-panel::-webkit-scrollbar-thumb {
+            background: #8b9dc3;
+            border-radius: 4px;
+        }
+
+        .dramaturg-panel::-webkit-scrollbar-thumb:hover {
+            background: #c73e1d;
         }
 
         .dramaturg-panel.expanded {
