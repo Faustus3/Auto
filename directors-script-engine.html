@@ -34,6 +34,7 @@
             display: flex;
             flex-direction: column;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .bible-panel h2 {
@@ -687,9 +688,9 @@ FADE OUT."></textarea>
             }
         };
 
-        // Ollama-Antwort für Charakter parsen
+        // Ollama-Antwort für Charakter parsen - Robuster Parser
         function parseCharacterFromResponse(response, requestedName = '') {
-            const lines = response.split('\n').map(line => line.trim()).filter(line => line);
+            console.log('Parsing response:', response);
 
             const character = {
                 name: requestedName || 'Unbenannter Charakter',
@@ -702,29 +703,74 @@ FADE OUT."></textarea>
                 summary: ''
             };
 
+            // Versuche verschiedene Parsing-Strategien
+
+            // Strategie 1: Nach Schlüsselwörtern suchen (case-insensitive)
+            const lines = response.split('\n').map(line => line.trim()).filter(line => line);
+
             lines.forEach(line => {
                 const lowerLine = line.toLowerCase();
 
-                if (lowerLine.includes('name:') || lowerLine.includes('name')) {
-                    character.name = line.split(':')[1]?.trim() || character.name;
-                } else if (lowerLine.includes('alter:') || lowerLine.includes('age:')) {
-                    character.age = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('aussehen:') || lowerLine.includes('appearance:')) {
-                    character.appearance = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('persönlichkeit:') || lowerLine.includes('personality:')) {
-                    character.personality = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('motivation:') || lowerLine.includes('motivation')) {
-                    character.motivation = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('hintergrund:') || lowerLine.includes('background:')) {
-                    character.background = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('rolle:') || lowerLine.includes('role:')) {
-                    character.role = line.split(':')[1]?.trim() || 'Charakter';
+                // Name finden
+                if (lowerLine.includes('name:') || (lowerLine.includes('name') && !lowerLine.includes('filename'))) {
+                    const match = line.match(/name:?\s*(.+)/i);
+                    if (match) character.name = match[1].trim();
+                }
+
+                // Alter finden
+                if (lowerLine.includes('alter:') || lowerLine.includes('age:')) {
+                    const match = line.match(/(alter|age):?\s*(.+)/i);
+                    if (match) character.age = match[2].trim();
+                }
+
+                // Aussehen finden
+                if (lowerLine.includes('aussehen:') || lowerLine.includes('appearance:')) {
+                    const match = line.match(/(aussehen|appearance):?\s*(.+)/i);
+                    if (match) character.appearance = match[2].trim();
+                }
+
+                // Persönlichkeit finden
+                if (lowerLine.includes('persönlichkeit:') || lowerLine.includes('personality:')) {
+                    const match = line.match(/(persönlichkeit|personality):?\s*(.+)/i);
+                    if (match) character.personality = match[2].trim();
+                }
+
+                // Motivation finden
+                if (lowerLine.includes('motivation:')) {
+                    const match = line.match(/motivation:?\s*(.+)/i);
+                    if (match) character.motivation = match[2].trim();
+                }
+
+                // Hintergrund finden
+                if (lowerLine.includes('hintergrund:') || lowerLine.includes('background:')) {
+                    const match = line.match(/(hintergrund|background):?\s*(.+)/i);
+                    if (match) character.background = match[2].trim();
+                }
+
+                // Rolle finden
+                if (lowerLine.includes('rolle:') || lowerLine.includes('role:')) {
+                    const match = line.match(/(rolle|role):?\s*(.+)/i);
+                    if (match) character.role = match[2].trim();
                 }
             });
 
-            // Zusammenfassung erstellen
-            character.summary = `${character.name} ist ${character.age ? character.age + ' Jahre alt' : 'im unbekannten Alter'}. ${character.personality ? character.personality : 'Persönlichkeit nicht beschrieben.'}`;
+            // Strategie 2: Fallback - wenn keine strukturierten Daten gefunden wurden,
+            // verwende die gesamte Antwort als Hintergrund
+            if (!character.appearance && !character.personality && !character.motivation && !character.background) {
+                // Extrahiere sinnvolle Informationen aus der freien Antwort
+                const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
+                if (sentences.length > 0) {
+                    character.background = sentences.slice(0, 2).join('. ').trim();
+                    character.personality = sentences.length > 2 ? sentences[2] : 'Nicht spezifiziert';
+                }
+            }
 
+            // Zusammenfassung erstellen
+            const ageInfo = character.age ? `${character.age} Jahre alt` : 'Alter unbekannt';
+            const personalityInfo = character.personality ? character.personality : 'Persönlichkeit nicht beschrieben';
+            character.summary = `${character.name} ist ${ageInfo}. ${personalityInfo}`;
+
+            console.log('Parsed character:', character);
             return character;
         }
 
@@ -887,10 +933,10 @@ FADE OUT."></textarea>
                 addMessage(`Erstelle Steckbrief für ${characterName}...`, false);
 
                 const script = document.getElementById('script').value;
-                const context = `SCRIPT:\n${script}\n\nErstelle einen detaillierten Steckbrief für den Charakter "${characterName}". Gib die Informationen in folgendem Format:\nName: [Name]\nAlter: [Alter]\nAussehen: [Beschreibung]\nPersönlichkeit: [Beschreibung]\nMotivation: [Beschreibung]\nHintergrund: [Beschreibung]\nRolle: [Protagonist/Antagonist/etc.]`;
+                const context = `SCRIPT:\n${script}\n\nErstelle einen detaillierten Steckbrief für den Charakter "${characterName}". Gib die Informationen in folgendem Format zurück:\n\nName: ${characterName}\nAlter: [z.B. 25]\nAussehen: [detaillierte Beschreibung]\nPersönlichkeit: [z.B. introvertiert, ehrgeizig]\nMotivation: [Hauptziele und Antriebe]\nHintergrund: [kurze Lebensgeschichte]\nRolle: [Protagonist/Antagonist/Nebenfigur]`;
 
                 try {
-                    const response = await callOllama(`Erstelle einen detaillierten Steckbrief für den Charakter "${characterName}" basierend auf dem Skript.`, context);
+                    const response = await callOllama(`Erstelle einen strukturierten Steckbrief für den Charakter "${characterName}" basierend auf dem Skript. Antworte nur mit den formatierten Informationen, keine zusätzlichen Kommentare.`, context);
                     addMessage(`Steckbrief für ${characterName} erstellt!`, false);
 
                     // Parse die Antwort und erstelle eine Charakter-Kachel
