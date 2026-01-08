@@ -1595,6 +1595,235 @@ FADE OUT."></textarea>
             }, 5000);
         }
 
+        // RAG Services initialisieren
+        async function initializeRAG() {
+            try {
+                console.log('🚀 Initialisiere RAG Services...');
+                
+                // ChromaClient importieren (falls verfügbar)
+                let ChromaClient;
+                try {
+                    // Versuche, ChromaClient zu importieren
+                    const chromaModule = await import('https://unpkg.com/chromadb@1.0.0/dist/index.js');
+                    ChromaClient = chromaModule.ChromaClient;
+                } catch (importError) {
+                    console.warn('⚠️ ChromaClient nicht verfügbar, RAG wird deaktiviert');
+                    window.RAG = { ready: false };
+                    return;
+                }
+                
+                // RAG Config
+                const RAG_CONFIG = {
+                    vectorStore: {
+                        type: 'chroma',
+                        path: './data/chroma',
+                        collection: 'script_documents_dev'
+                    },
+                    embeddings: {
+                        model: 'Xenova/all-MiniLM-L6-v2',
+                        dimension: 384,
+                        quantized: true,
+                        batchSize: 8
+                    },
+                    retrieval: {
+                        topK: 5,
+                        similarityThreshold: 0.7,
+                        maxContextLength: 3000
+                    }
+                };
+                
+                // Chroma DB initialisieren
+                const chromaClient = new ChromaClient({
+                    path: RAG_CONFIG.vectorStore.path
+                });
+                
+                window.RAG = {
+                    config: RAG_CONFIG,
+                    client: chromaClient,
+                    collection: null,
+                    ready: false
+                };
+                
+                // Collection erstellen oder laden
+                window.RAG.collection = await chromaClient.getOrCreateCollection({
+                    name: RAG_CONFIG.vectorStore.collection,
+                    metadata: {
+                        "hnsw:space": "cosine"
+                    }
+                });
+                
+                console.log('✅ RAG Services initialisiert');
+                window.RAG.ready = true;
+                
+                // Bestehende Charaktere indexieren
+                await indexExistingCharacters();
+                
+            } catch (error) {
+                console.warn('⚠️ RAG Initialisierung fehlgeschlagen:', error);
+                window.RAG = { ready: false };
+            }
+        }
+
+        // Charakter in RAG indexieren
+        async function indexCharacter(characterData) {
+            if (!window.RAG?.ready) return;
+            
+            try {
+                console.log(`📝 Indexiere Charakter: ${characterData.name}`);
+                
+                // Charakter-Profil erstellen
+                const characterProfile = `
+Name: ${characterData.name}
+Alter: ${characterData.age || 'Unbekannt'}
+Rolle: ${characterData.role || 'Charakter'}
+Persönlichkeit: ${characterData.personality || 'Nicht beschrieben'}
+Motivation: ${characterData.motivation || 'Nicht beschrieben'}
+Hintergrund: ${characterData.background || 'Nicht beschrieben'}
+Aussehen: ${characterData.appearance || 'Nicht beschrieben'}
+Zusammenfassung: ${characterData.summary || ''}
+                `.trim();
+                
+                // Einfache ID generieren
+                const characterId = `character_${characterData.name.toLowerCase().replace(/\s+/g, '_')}`;
+                
+                // Zu Collection hinzufügen
+                await window.RAG.collection.add({
+                    ids: [characterId],
+                    documents: [characterProfile],
+                    metadatas: [{
+                        type: 'character',
+                        characterName: characterData.name,
+                        processedAt: new Date().toISOString()
+                    }]
+                });
+                
+                console.log(`✅ Charakter "${characterData.name}" indexiert`);
+            } catch (error) {
+                console.error(`❌ Fehler beim Indexieren von "${characterData.name}":`, error);
+            }
+        }
+
+        // Bestehende Charaktere indexieren
+        async function indexExistingCharacters() {
+            if (!window.RAG?.ready) return;
+            
+            try {
+                const characters = await loadData('characterCards') || [];
+                for (const character of characters) {
+                    await indexCharacter(character);
+                }
+                console.log(`✅ ${characters.length} Charaktere indexiert`);
+            } catch (error) {
+                console.error('❌ Fehler beim Indexieren bestehender Charaktere:', error);
+            }
+        }
+
+        // RAG-basierte Charakter-Suche
+        async function searchCharacters(query, topK = 3) {
+            if (!window.RAG?.ready) {
+                console.warn('RAG nicht verfügbar, verwende Fallback-Suche');
+                return characters.filter(char => 
+                    char.name.toLowerCase().includes(query.toLowerCase()) ||
+                    char.summary.toLowerCase().includes(query.toLowerCase())
+                ).slice(0, topK);
+            }
+            
+            try {
+                const results = await window.RAG.collection.query({
+                    queryTexts: [query],
+                    nResults: topK,
+                    where: { type: 'character' }
+                });
+                
+                return results.documents[0].map((doc, index) => ({
+                    document: doc,
+                    metadata: results.metadatas[0][index],
+                    distance: results.distances[0][index]
+                }));
+            } catch (error) {
+                console.error('❌ Fehler bei RAG-Suche:', error);
+                return [];
+            }
+        }
+
+        // RAG-erweiterte Smart Actions
+        async function analyzeSceneWithRAG() {
+            const script = document.getElementById('script')?.value || '';
+            const query = 'Analysiere die aktuelle Szene auf Charakter-Konsistenz und Plot-Entwicklung';
+            
+            addMessage('Analysiere Szene mit RAG...', true);
+            
+            try {
+                // Relevante Charaktere suchen
+                const relevantCharacters = await searchCharacters(script.substring(0, 200), 3);
+                
+                // Kontext erstellen
+                let context = `SCRIPT:\n${script}\n\n`;
+                
+                if (relevantCharacters.length > 0) {
+                    context += 'RELEVANTE CHARAKTERE:\n';
+                    relevantCharacters.forEach((result, index) => {
+                        context += `[${index + 1}] ${result.document}\n\n`;
+                    });
+                }
+                
+                // Analyse mit Ollama
+                const prompt = 'Analysiere diese Szene auf Pacing, Spannungsbogen und Subtext. Gib konstruktive Hinweise für die Regie.';
+                const response = await callOllama(prompt, context);
+                
+                addMessage(response);
+            } catch (error) {
+                console.error('❌ Fehler bei RAG-Analyse:', error);
+                addMessage('Fehler bei der Analyse. Verwende Standard-Methode...', false);
+                // Fallback zur ursprünglichen Methode
+                document.getElementById('analyzeScene').click();
+            }
+        }
+
+        // Charakter-konsistente Dialog-Generierung mit RAG
+        async function generateCharacterConsistentDialog(characterName, situation) {
+            if (!window.RAG?.ready) {
+                addMessage('RAG nicht verfügbar. Verwende Standard-Dialog-Generierung.', false);
+                return;
+            }
+            
+            try {
+                addMessage(`Generiere charakter-konsistenten Dialog für ${characterName}...`, true);
+                
+                // Charakter-Profil suchen
+                const characterResults = await searchCharacters(characterName, 1);
+                
+                if (characterResults.length === 0) {
+                    addMessage(`Charakter "${characterName}" nicht in RAG gefunden.`, false);
+                    return;
+                }
+                
+                const characterProfile = characterResults[0].document;
+                
+                // Kontext erstellen
+                const context = `
+CHARAKTER-PROFIL:
+${characterProfile}
+
+SITUATION:
+${situation}
+
+Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
+- Sprechweise und Wortwahl
+- Persönlichkeit und Emotionen
+- Hintergrund und Motivation
+                `.trim();
+                
+                const prompt = `Schreibe einen Dialog für ${characterName} in dieser Situation.`;
+                const response = await callOllama(prompt, context);
+                
+                addMessage(response);
+            } catch (error) {
+                console.error('❌ Fehler bei Dialog-Generierung:', error);
+                addMessage('Fehler bei der Dialog-Generierung.', false);
+            }
+        }
+
         // URL Eingabe beim Laden mit aktueller URL füllen
         window.addEventListener('load', async () => {
             await initDB();
@@ -1603,6 +1832,9 @@ FADE OUT."></textarea>
             setupAutoExpand();
             enhanceChat();
             setupUpload();
+            
+            // RAG initialisieren (im Hintergrund, nicht blockierend)
+            initializeRAG();
 
             // Aktuelle Ollama URL anzeigen
             const currentUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';

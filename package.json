@@ -16,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/Faustus3/Auto/issues"
   },
-  "homepage": "https://github.com/Faustus3/Auto#readme"
+  "homepage": "https://github.com/Faustus3/Auto#readme",
+  "dependencies": {
+    "@xenova/transformers": "^2.17.2",
+    "chromadb": "^3.2.0",
+    "mammoth": "^1.11.0",
+    "pdf-parse": "^2.4.5",
+    "uuid": "^13.0.0"
+  }
 }
