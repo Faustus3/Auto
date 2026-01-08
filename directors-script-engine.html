@@ -72,6 +72,150 @@
             border-color: #8b9dc3;
         }
 
+        /* Character Cards */
+        .character-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .character-cards::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .character-cards::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .character-cards::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .character-card {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .character-card:hover {
+            border-color: #8b9dc3;
+            transform: translateY(-1px);
+        }
+
+        .character-card.expanded {
+            background: #1a1a1a;
+            border-color: #8b9dc3;
+        }
+
+        .character-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .character-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #8b9dc3;
+        }
+
+        .character-role {
+            font-size: 11px;
+            color: #a0a0a0;
+            background: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+
+        .character-summary {
+            font-size: 12px;
+            color: #c0c0c0;
+            line-height: 1.4;
+        }
+
+        .character-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+
+        .character-card.expanded .character-details {
+            display: block;
+        }
+
+        .character-detail-item {
+            margin-bottom: 8px;
+        }
+
+        .character-detail-label {
+            font-size: 11px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .character-detail-value {
+            font-size: 12px;
+            color: #e0e0e0;
+            line-height: 1.4;
+        }
+
+        .character-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: none;
+            gap: 5px;
+        }
+
+        .character-card:hover .character-actions {
+            display: flex;
+        }
+
+        .character-action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 2px;
+            font-size: 10px;
+            transition: color 0.2s;
+        }
+
+        .character-action-btn:hover {
+            color: #c73e1d;
+        }
+
+        .add-character-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .add-character-btn:hover {
+            background: #8b9dc3;
+            border-color: #8b9dc3;
+        }
+
         /* Mittlere Spalte - The Script */
         .script-panel {
             width: 50%;
@@ -134,6 +278,45 @@
             font-size: 18px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .ollama-config {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .ollama-url-input {
+            flex: 1;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 5px 8px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+        }
+
+        .ollama-url-input:focus {
+            outline: none;
+            border-color: #8b9dc3;
+        }
+
+        .ollama-save-btn {
+            background: #4a9d4a;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .ollama-save-btn:hover {
+            background: #5aad5a;
         }
 
         .smart-actions {
@@ -260,7 +443,8 @@
             
             <div class="bible-section">
                 <h3>Charaktere</h3>
-                <textarea class="bible-textarea" id="characters" placeholder="CHARAKTERNAME&#10;Alter:&#10;Aussehen:&#10;Persönlichkeit:&#10;Motivation:&#10;Hintergrund:"></textarea>
+                <button class="add-character-btn" id="addCharacterBtn">Neuer Charakter</button>
+                <div class="character-cards" id="characterCards"></div>
             </div>
             
             <div class="bible-section">
@@ -300,6 +484,10 @@ FADE OUT."></textarea>
         <div class="dramaturg-panel">
             <div class="dramaturg-header">
                 <h2>Directorial Notes</h2>
+                <div class="ollama-config">
+                    <input type="text" class="ollama-url-input" id="ollamaUrlInput" placeholder="Ollama URL">
+                    <button class="ollama-save-btn" id="saveOllamaUrl">Speichern</button>
+                </div>
             </div>
             
             <div class="smart-actions">
@@ -330,6 +518,7 @@ FADE OUT."></textarea>
         const DB_NAME = 'DirectorsScriptEngine';
         const DB_VERSION = 1;
         let db;
+        let characters = []; // Array für Charakter-Kacheln
 
         // IndexedDB initialisieren
         function initDB() {
@@ -381,11 +570,158 @@ FADE OUT."></textarea>
             const locations = await loadData('locations') || '';
             const background = await loadData('background') || '';
             const script = await loadData('script') || '';
-            
+
             document.getElementById('characters').value = characters;
             document.getElementById('locations').value = locations;
             document.getElementById('background').value = background;
             document.getElementById('script').value = script;
+
+            // Charakter-Kacheln laden
+            await loadCharacters();
+        }
+
+        // Charakter-Kacheln laden
+        async function loadCharacters() {
+            const savedCharacters = await loadData('characterCards') || [];
+            characters = Array.isArray(savedCharacters) ? savedCharacters : [];
+            renderAllCharacters();
+        }
+
+        // Charakter-Kacheln speichern
+        async function saveCharacters() {
+            await saveData('characterCards', characters);
+        }
+
+        // Charakter-Kachel erstellen
+        function createCharacterCard(character, index) {
+            const card = document.createElement('div');
+            card.className = 'character-card';
+            card.dataset.index = index;
+
+            card.innerHTML = `
+                <div class="character-card-header">
+                    <div class="character-name">${character.name}</div>
+                    <div class="character-role">${character.role || 'Charakter'}</div>
+                </div>
+                <div class="character-summary">${character.summary || 'Keine Zusammenfassung verfügbar.'}</div>
+                <div class="character-details">
+                    <div class="character-detail-item">
+                        <div class="character-detail-label">Alter</div>
+                        <div class="character-detail-value">${character.age || 'Unbekannt'}</div>
+                    </div>
+                    <div class="character-detail-item">
+                        <div class="character-detail-label">Aussehen</div>
+                        <div class="character-detail-value">${character.appearance || 'Nicht beschrieben'}</div>
+                    </div>
+                    <div class="character-detail-item">
+                        <div class="character-detail-label">Persönlichkeit</div>
+                        <div class="character-detail-value">${character.personality || 'Nicht beschrieben'}</div>
+                    </div>
+                    <div class="character-detail-item">
+                        <div class="character-detail-label">Motivation</div>
+                        <div class="character-detail-value">${character.motivation || 'Nicht beschrieben'}</div>
+                    </div>
+                    <div class="character-detail-item">
+                        <div class="character-detail-label">Hintergrund</div>
+                        <div class="character-detail-value">${character.background || 'Nicht beschrieben'}</div>
+                    </div>
+                </div>
+                <div class="character-actions">
+                    <button class="character-action-btn" onclick="deleteCharacter(${index})">×</button>
+                </div>
+            `;
+
+            card.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('character-action-btn')) {
+                    toggleCharacterCard(card);
+                }
+            });
+
+            return card;
+        }
+
+        // Alle Charakter-Kacheln rendern
+        function renderAllCharacters() {
+            const container = document.getElementById('characterCards');
+            container.innerHTML = '';
+
+            characters.forEach((character, index) => {
+                const card = createCharacterCard(character, index);
+                container.appendChild(card);
+            });
+        }
+
+        // Charakter-Kachel expandieren/collapsen
+        function toggleCharacterCard(card) {
+            card.classList.toggle('expanded');
+        }
+
+        // Neuen Charakter hinzufügen
+        function addCharacter(characterData = null) {
+            const newCharacter = characterData || {
+                name: 'Neuer Charakter',
+                role: 'Charakter',
+                age: '',
+                appearance: '',
+                personality: '',
+                motivation: '',
+                background: '',
+                summary: 'Neuer Charakter ohne Beschreibung.'
+            };
+
+            characters.push(newCharacter);
+            saveCharacters();
+            renderAllCharacters();
+        }
+
+        // Charakter löschen
+        window.deleteCharacter = function(index) {
+            if (confirm('Charakter wirklich löschen?')) {
+                characters.splice(index, 1);
+                saveCharacters();
+                renderAllCharacters();
+            }
+        };
+
+        // Ollama-Antwort für Charakter parsen
+        function parseCharacterFromResponse(response, requestedName = '') {
+            const lines = response.split('\n').map(line => line.trim()).filter(line => line);
+
+            const character = {
+                name: requestedName || 'Unbenannter Charakter',
+                role: 'Charakter',
+                age: '',
+                appearance: '',
+                personality: '',
+                motivation: '',
+                background: '',
+                summary: ''
+            };
+
+            lines.forEach(line => {
+                const lowerLine = line.toLowerCase();
+
+                if (lowerLine.includes('name:') || lowerLine.includes('name')) {
+                    character.name = line.split(':')[1]?.trim() || character.name;
+                } else if (lowerLine.includes('alter:') || lowerLine.includes('age:')) {
+                    character.age = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('aussehen:') || lowerLine.includes('appearance:')) {
+                    character.appearance = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('persönlichkeit:') || lowerLine.includes('personality:')) {
+                    character.personality = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('motivation:') || lowerLine.includes('motivation')) {
+                    character.motivation = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('hintergrund:') || lowerLine.includes('background:')) {
+                    character.background = line.split(':')[1]?.trim() || '';
+                } else if (lowerLine.includes('rolle:') || lowerLine.includes('role:')) {
+                    character.role = line.split(':')[1]?.trim() || 'Charakter';
+                }
+            });
+
+            // Zusammenfassung erstellen
+            character.summary = `${character.name} ist ${character.age ? character.age + ' Jahre alt' : 'im unbekannten Alter'}. ${character.personality ? character.personality : 'Persönlichkeit nicht beschrieben.'}`;
+
+            return character;
         }
 
         // Auto-Save Funktion
@@ -400,12 +736,14 @@ FADE OUT."></textarea>
             });
         }
 
-        // Ollama API Call
+        // Ollama API Call - Konfigurierbare URL für lokale/dev und remote/production
         async function callOllama(prompt, context) {
+            // URL konfigurierbar machen - standardmäßig localhost für Entwicklung
+            const ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
+
             try {
-                const response = await fetch('http://localhost:11434/api/generate', {
+                const response = await fetch(ollamaUrl, {
                     method: 'POST',
-                    mode: 'cors',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -415,16 +753,16 @@ FADE OUT."></textarea>
                         stream: false
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Debug: Log the response to see its structure
                 console.log('Ollama Response:', data);
-                
+
                 // Check if response exists and has the correct property
                 if (data && data.response) {
                     return data.response;
@@ -438,7 +776,13 @@ FADE OUT."></textarea>
                 }
             } catch (error) {
                 console.error('Ollama API Error:', error);
-                return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass Ollama läuft und das Modell 'llama3.2' verfügbar ist.`;
+
+                // Spezifische CORS/HTTPS-Fehlerbehandlung
+                if (error.message.includes('CORS') || error.message.includes('Mixed Content')) {
+                    return `CORS-Fehler: Die Website (HTTPS) kann nicht auf lokales Ollama (HTTP) zugreifen.\n\nLösungen:\n1. Ollama mit CORS starten: OLLAMA_ORIGINS=https://sohaltweil.de ollama serve\n2. Ollama auf HTTPS-Server hosten\n3. Browser-Einstellungen anpassen (unsichere Inhalte erlauben)\n\nTechnischer Fehler: ${error.message}`;
+                }
+
+                return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass:\n- Ollama läuft (${ollamaUrl})\n- Das Modell 'llama3.2' verfügbar ist\n- CORS für diese Domain erlaubt ist`;
             }
         }
 
@@ -503,21 +847,47 @@ FADE OUT."></textarea>
         document.getElementById('sendMessageBtn').addEventListener('click', async () => {
             const input = document.getElementById('chatInput');
             const message = input.value.trim();
-            
+
             if (!message) return;
-            
+
             addMessage(message, true);
             input.value = '';
-            
-            const script = document.getElementById('script').value;
-            const characters = document.getElementById('characters').value;
-            const locations = document.getElementById('locations').value;
-            const background = document.getElementById('background').value;
-            
-            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-            
-            const response = await callOllama(message, context);
-            addMessage(response);
+
+            // Prüfe auf Charakter-Erstellungsbefehle
+            const characterMatch = message.match(/(erstelle|create).*steckbrief.*für\s+(.+)/i) ||
+                                   message.match(/(erstelle|create).*(charakter|character).*\s+(.+)/i);
+
+            if (characterMatch) {
+                const characterName = characterMatch[2].trim();
+                addMessage(`Erstelle Steckbrief für ${characterName}...`, false);
+
+                const script = document.getElementById('script').value;
+                const context = `SCRIPT:\n${script}\n\nErstelle einen detaillierten Steckbrief für den Charakter "${characterName}". Gib die Informationen in folgendem Format:\nName: [Name]\nAlter: [Alter]\nAussehen: [Beschreibung]\nPersönlichkeit: [Beschreibung]\nMotivation: [Beschreibung]\nHintergrund: [Beschreibung]\nRolle: [Protagonist/Antagonist/etc.]`;
+
+                try {
+                    const response = await callOllama(`Erstelle einen detaillierten Steckbrief für den Charakter "${characterName}" basierend auf dem Skript.`, context);
+                    addMessage(`Steckbrief für ${characterName} erstellt!`, false);
+
+                    // Parse die Antwort und erstelle eine Charakter-Kachel
+                    const characterData = parseCharacterFromResponse(response, characterName);
+                    addCharacter(characterData);
+
+                    addMessage(`Charakter "${characterName}" wurde zur Bible hinzugefügt.`, false);
+                } catch (error) {
+                    addMessage(`Fehler beim Erstellen des Steckbriefs: ${error.message}`, false);
+                }
+            } else {
+                // Normale Chat-Funktionalität
+                const script = document.getElementById('script').value;
+                const characters = document.getElementById('characters').value;
+                const locations = document.getElementById('locations').value;
+                const background = document.getElementById('background').value;
+
+                const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
+                const response = await callOllama(message, context);
+                addMessage(response);
+            }
         });
 
         // Enter-Taste für Chat
@@ -555,11 +925,33 @@ FADE OUT."></textarea>
             addMessage('Arbeit wurde als JSON exportiert.', false);
         });
 
-        // Initialisierung
+        // Ollama URL Konfiguration
+        document.getElementById('saveOllamaUrl').addEventListener('click', () => {
+            const url = document.getElementById('ollamaUrlInput').value.trim();
+            if (url) {
+                localStorage.setItem('ollamaUrl', url);
+                addMessage(`Ollama URL gespeichert: ${url}`, false);
+                document.getElementById('ollamaUrlInput').value = '';
+            } else {
+                addMessage('Bitte geben Sie eine gültige URL ein.', false);
+            }
+        });
+
+        // Neuer Charakter Button
+        document.getElementById('addCharacterBtn').addEventListener('click', () => {
+            addCharacter();
+            addMessage('Neuer Charakter wurde zur Bible hinzugefügt.', false);
+        });
+
+        // URL Eingabe beim Laden mit aktueller URL füllen
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
             setupAutoSave();
+
+            // Aktuelle Ollama URL anzeigen
+            const currentUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
+            document.getElementById('ollamaUrlInput').placeholder = `Aktuell: ${currentUrl}`;
         });
     </script>
 </body>
