@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Director's Script Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         * {
             margin: 0;
@@ -801,50 +802,69 @@ FADE OUT."></textarea>
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Smart Actions
+        // Smart Actions - Sicherheitsprüfungen für DOM-Elemente
         document.getElementById('analyzeScene').addEventListener('click', async () => {
-            const script = document.getElementById('script').value;
-            const characters = document.getElementById('characters').value;
-            const locations = document.getElementById('locations').value;
-            const background = document.getElementById('background').value;
-            
-            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-            
+            const scriptElement = document.getElementById('script');
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+
+            const script = scriptElement ? scriptElement.value : '';
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
             addMessage('Analysiere Szene...', true);
-            
+
             const prompt = 'Analysiere diese Szene auf Pacing, Spannungsbogen und Subtext. Gib konstruktive Hinweise für die Regie.';
             const response = await callOllama(prompt, context);
-            
+
             addMessage(response);
         });
 
         document.getElementById('dialogCheck').addEventListener('click', async () => {
-            const script = document.getElementById('script').value;
-            const characters = document.getElementById('characters').value;
-            
-            const context = `CHARACTERS:\n${characters}\n\nSCRIPT:\n${script}`;
-            
+            const scriptElement = document.getElementById('script');
+
+            const script = scriptElement ? scriptElement.value : '';
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nPersönlichkeit: ${char.personality}`
+            ).join('\n\n');
+
+            const context = `CHARACTERS:\n${charactersText}\n\nSCRIPT:\n${script}`;
+
             addMessage('Prüfe Dialoge...', true);
-            
+
             const prompt = 'Prüfe, ob die Dialoge der Charaktere konsistent mit ihren beschriebenen Persönlichkeiten sind. Gib spezifische Hinweise für jeden Charakter.';
             const response = await callOllama(prompt, context);
-            
+
             addMessage(response);
         });
 
         document.getElementById('continueWriting').addEventListener('click', async () => {
-            const script = document.getElementById('script').value;
-            const characters = document.getElementById('characters').value;
-            const locations = document.getElementById('locations').value;
-            const background = document.getElementById('background').value;
-            
-            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-            
+            const scriptElement = document.getElementById('script');
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+
+            const script = scriptElement ? scriptElement.value : '';
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
             addMessage('Schreibe weiter...', true);
-            
+
             const prompt = 'Schlage die nächsten 5-10 Zeilen des Drehbuchs vor, die sich nahtlos an die letzte Szene anschließen. Halte dich an das Format und die Charaktere.';
             const response = await callOllama(prompt, context);
-            
+
             addMessage(response);
         });
 
@@ -883,12 +903,19 @@ FADE OUT."></textarea>
                 }
             } else {
                 // Normale Chat-Funktionalität
-                const script = document.getElementById('script').value;
-                const characters = document.getElementById('characters').value;
-                const locations = document.getElementById('locations').value;
-                const background = document.getElementById('background').value;
+                const scriptElement = document.getElementById('script');
+                const locationsElement = document.getElementById('locations');
+                const backgroundElement = document.getElementById('background');
 
-                const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${characters}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+                const script = scriptElement ? scriptElement.value : '';
+                // Verwende Charakter-Kacheln statt textarea
+                const charactersText = characters.map(char =>
+                    `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
+                ).join('\n\n');
+                const locations = locationsElement ? locationsElement.value : '';
+                const background = backgroundElement ? backgroundElement.value : '';
+
+                const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
 
                 const response = await callOllama(message, context);
                 addMessage(response);
@@ -904,28 +931,31 @@ FADE OUT."></textarea>
 
         // Export-Funktion
         document.getElementById('exportBtn').addEventListener('click', async () => {
-            const characters = document.getElementById('characters').value;
-            const locations = document.getElementById('locations').value;
-            const background = document.getElementById('background').value;
-            const script = document.getElementById('script').value;
-            
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+            const scriptElement = document.getElementById('script');
+
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+            const script = scriptElement ? scriptElement.value : '';
+
             const exportData = {
-                characters: characters,
+                characterCards: characters, // Neue Charakter-Kacheln
                 locations: locations,
                 background: background,
                 script: script,
                 exportedAt: new Date().toISOString()
             };
-            
+
             const dataStr = JSON.stringify(exportData, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(dataBlob);
-            
+
             const link = document.createElement('a');
             link.href = url;
             link.download = `script-export-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
-            
+
             URL.revokeObjectURL(url);
             addMessage('Arbeit wurde als JSON exportiert.', false);
         });
