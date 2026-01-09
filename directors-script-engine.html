@@ -76,6 +76,27 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: 1px solid #8b9dc3;
+            color: #8b9dc3;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'Courier Prime', monospace;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #8b9dc3;
+            color: #1a1a1a;
         }
 
         .bible-section {
@@ -368,6 +389,9 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .ollama-config {
@@ -623,7 +647,7 @@
     <div class="container">
         <!-- Linke Spalte - The Bible -->
         <div class="bible-panel">
-            <h2>The Bible</h2>
+            <h2>The Bible<button class="toggle-btn" id="toggleBibleBtn">-</button></h2>
             
             <div class="bible-section">
                 <h3>Charaktere</h3>
@@ -667,7 +691,7 @@ FADE OUT."></textarea>
         <!-- Rechte Spalte - The Dramaturg -->
         <div class="dramaturg-panel">
             <div class="dramaturg-header">
-                <h2>Directorial Notes</h2>
+                <h2>Directorial Notes<button class="toggle-btn" id="toggleDramaturgBtn">-</button></h2>
                 <div class="ollama-config">
                     <input type="text" class="ollama-url-input" id="ollamaUrlInput" placeholder="Ollama URL">
                     <button class="ollama-save-btn" id="saveOllamaUrl">Speichern</button>
@@ -1107,6 +1131,28 @@ FADE OUT."></textarea>
             addMessage(response);
         });
 
+        // Chat-Kontext speichern und laden
+        async function saveChatContext() {
+            const chatMessages = document.getElementById('chatMessages');
+            const messages = Array.from(chatMessages.children).map(msg => ({
+                text: msg.textContent,
+                isUser: msg.classList.contains('user-message')
+            }));
+            await saveData('chatContext', messages);
+        }
+
+        async function loadChatContext() {
+            const messages = await loadData('chatContext') || [];
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Nur laden wenn keine aktuellen Nachrichten vorhanden sind
+            if (chatMessages.children.length <= 1) {
+                messages.forEach(msg => {
+                    addMessage(msg.text, msg.isUser);
+                });
+            }
+        }
+
         // Chat-Funktionalität
         document.getElementById('sendMessageBtn').addEventListener('click', async () => {
             const input = document.getElementById('chatInput');
@@ -1116,6 +1162,9 @@ FADE OUT."></textarea>
 
             addMessage(message, true);
             input.value = '';
+
+            // Chat-Kontext speichern
+            await saveChatContext();
 
             // Prüfe auf Charakter-Erstellungsbefehle
             const characterMatch = message.match(/(erstelle|create).*steckbrief.*für\s+(.+)/i) ||
@@ -1137,6 +1186,9 @@ FADE OUT."></textarea>
                     addCharacter(characterData);
 
                     addMessage(`Charakter "${characterName}" wurde zur Bible hinzugefügt.`, false);
+                    
+                    // Chat-Kontext nach erfolgreicher Charakter-Erstellung speichern
+                    await saveChatContext();
                 } catch (error) {
                     addMessage(`Fehler beim Erstellen des Steckbriefs: ${error.message}`, false);
                 }
@@ -1158,6 +1210,9 @@ FADE OUT."></textarea>
 
                 const response = await callOllama(message, context);
                 addMessage(response);
+                
+                // Chat-Kontext nach Antwort speichern
+                await saveChatContext();
             }
         });
 
@@ -1239,56 +1294,43 @@ FADE OUT."></textarea>
             return memoryStatus;
         }
 
-        // Auto-Expand Funktion für Panels basierend auf Cursor-Position
-        function setupAutoExpand() {
-            const container = document.querySelector('.container');
+        // Manuelle Toggle-Funktionalität für Panels
+        function setupManualToggle() {
+            const toggleBibleBtn = document.getElementById('toggleBibleBtn');
+            const toggleDramaturgBtn = document.getElementById('toggleDramaturgBtn');
             const biblePanel = document.querySelector('.bible-panel');
             const scriptPanel = document.querySelector('.script-panel');
             const dramaturgPanel = document.querySelector('.dramaturg-panel');
 
-            let isMouseInside = false;
-            let mouseX = 0;
-
-            container.addEventListener('mouseenter', () => {
-                isMouseInside = true;
-            });
-
-            container.addEventListener('mouseleave', () => {
-                isMouseInside = false;
-                // Reset all panels to normal size
-                biblePanel.classList.remove('collapsed');
-                scriptPanel.classList.remove('expanded');
-                dramaturgPanel.classList.remove('expanded');
-            });
-
-            container.addEventListener('mousemove', (e) => {
-                if (!isMouseInside) return;
-
-                mouseX = e.clientX;
-                const containerWidth = container.offsetWidth;
-                const relativeX = mouseX / containerWidth;
-
-                // Reset all panels first
-                biblePanel.classList.remove('collapsed');
-                scriptPanel.classList.remove('expanded');
-                dramaturgPanel.classList.remove('expanded');
-
-                // Expand panels based on cursor position
-                if (relativeX < 0.25) {
-                    // Cursor in left third - expand Bible
-                    biblePanel.classList.remove('collapsed');
-                    scriptPanel.classList.remove('expanded');
-                    dramaturgPanel.classList.remove('expanded');
-                } else if (relativeX < 0.75) {
-                    // Cursor in middle third - expand Script
-                    biblePanel.classList.add('collapsed');
-                    scriptPanel.classList.add('expanded');
-                    dramaturgPanel.classList.remove('expanded');
+            // Bible Panel Toggle
+            toggleBibleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                biblePanel.classList.toggle('collapsed');
+                
+                if (biblePanel.classList.contains('collapsed')) {
+                    toggleBibleBtn.textContent = '+';
+                    scriptPanel.style.width = 'calc(75% - 1px)';
+                    dramaturgPanel.style.width = '25%';
                 } else {
-                    // Cursor in right third - expand Dramaturg
-                    biblePanel.classList.add('collapsed');
-                    scriptPanel.classList.remove('expanded');
-                    dramaturgPanel.classList.add('expanded');
+                    toggleBibleBtn.textContent = '-';
+                    scriptPanel.style.width = '50%';
+                    dramaturgPanel.style.width = '25%';
+                }
+            });
+
+            // Dramaturg Panel Toggle
+            toggleDramaturgBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dramaturgPanel.classList.toggle('collapsed');
+                
+                if (dramaturgPanel.classList.contains('collapsed')) {
+                    toggleDramaturgBtn.textContent = '+';
+                    scriptPanel.style.width = 'calc(75% - 1px)';
+                    biblePanel.style.width = '25%';
+                } else {
+                    toggleDramaturgBtn.textContent = '-';
+                    scriptPanel.style.width = '50%';
+                    biblePanel.style.width = '25%';
                 }
             });
         }
@@ -1829,9 +1871,12 @@ Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
             await initDB();
             await loadAllData();
             setupAutoSave();
-            setupAutoExpand();
+            setupManualToggle();
             enhanceChat();
             setupUpload();
+            
+            // Chat-Kontext laden
+            await loadChatContext();
             
             // RAG initialisieren (im Hintergrund, nicht blockierend)
             initializeRAG();
@@ -1846,3 +1891,4 @@ Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
     </script>
 </body>
 </html>
+            initializeRAG();
