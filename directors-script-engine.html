@@ -703,6 +703,7 @@ FADE OUT."></textarea>
             <button class="action-btn" id="dialogCheck">Dialog-Check</button>
             <button class="action-btn" id="continueWriting">Weiterschreiben</button>
             <button class="action-btn" id="writeScript">Skript schreiben</button>
+            <button class="action-btn" id="progressiveWriting">Progressives Schreiben</button>
             <button class="action-btn" id="editScript">Skript bearbeiten</button>
             <button class="action-btn" id="editBackground">Background bearbeiten</button>
             <button class="action-btn" id="readBackground">Background lesen</button>
@@ -1190,6 +1191,35 @@ FADE OUT."></textarea>
 
             // Frage den Benutzer, ob die Änderungen übernommen werden sollen
             addMessage('Möchten Sie die vorgeschlagenen Änderungen übernehmen? (Antworten Sie mit "Ja" oder "Nein")', false);
+        });
+
+        // Progressives Schreiben Funktion
+        document.getElementById('progressiveWriting').addEventListener('click', async () => {
+            const scriptElement = document.getElementById('script');
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+
+            const script = scriptElement ? scriptElement.value : '';
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `CURRENT SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
+            addMessage('Starte progressives Schreiben...', true);
+
+            // Starten Sie einen interaktiven Schreibprozess mit dem LLM
+            const prompt = `Ich möchte ein Drehbuch progressiv mit Ihnen entwickeln. Bitte analysieren Sie das aktuelle Skript und schlagen Sie vor, wie wir es gemeinsam weiterentwickeln können. Fragen Sie mich gezielte Fragen zu Charakteren, Handlung oder Szenen, um den Schreibprozess voranzutreiben. Geben Sie mir konkrete Vorschläge und Optionen, zwischen denen ich wählen kann.`;
+            const response = await callOllama(prompt, context);
+
+            // Zeige die Vorschläge im Chat an
+            addMessage(response);
+
+            // Frage den Benutzer nach Feedback oder weiteren Anweisungen
+            addMessage('Wie möchten Sie fortfahren? Sie können mir spezifische Anweisungen geben oder zwischen den vorgeschlagenen Optionen wählen.', false);
         });
 
         // Background bearbeiten Funktion
