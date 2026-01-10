@@ -698,11 +698,15 @@ FADE OUT."></textarea>
                 </div>
             </div>
             
-            <div class="smart-actions">
-                <button class="action-btn" id="analyzeScene">Szene analysieren</button>
-                <button class="action-btn" id="dialogCheck">Dialog-Check</button>
-                <button class="action-btn" id="continueWriting">Weiterschreiben</button>
-            </div>
+        <div class="smart-actions">
+            <button class="action-btn" id="analyzeScene">Szene analysieren</button>
+            <button class="action-btn" id="dialogCheck">Dialog-Check</button>
+            <button class="action-btn" id="continueWriting">Weiterschreiben</button>
+            <button class="action-btn" id="writeScript">Skript schreiben</button>
+            <button class="action-btn" id="editScript">Skript bearbeiten</button>
+            <button class="action-btn" id="editBackground">Background bearbeiten</button>
+            <button class="action-btn" id="readBackground">Background lesen</button>
+        </div>
             
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages">
@@ -1131,6 +1135,108 @@ FADE OUT."></textarea>
             addMessage(response);
         });
 
+        // Skript schreiben Funktion
+        document.getElementById('writeScript').addEventListener('click', async () => {
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `CHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
+            addMessage('Schreibe neues Skript...', true);
+
+            const prompt = `Schreibe ein komplett neues Drehbuch basierend auf den Charakteren, Orten und Hintergrundinformationen. Das Drehbuch sollte eine klare Struktur mit Einführung, Konflikt und Auflösung haben. Verwende das Standard-Drehbuchformat mit Szenenbeschreibungen und Dialogen.`;
+            const response = await callOllama(prompt, context);
+
+            // Setze das generierte Skript in das Skriptfeld
+            const scriptElement = document.getElementById('script');
+            if (scriptElement) {
+                scriptElement.value = response;
+                await saveData('script', response);
+            }
+
+            addMessage('Neues Skript wurde generiert!');
+        });
+
+        // Skript bearbeiten Funktion
+        document.getElementById('editScript').addEventListener('click', async () => {
+            const scriptElement = document.getElementById('script');
+            const locationsElement = document.getElementById('locations');
+            const backgroundElement = document.getElementById('background');
+
+            const script = scriptElement ? scriptElement.value : '';
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `CURRENT SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
+
+            addMessage('Bearbeite Skript...', true);
+
+            const prompt = `Analysiere das aktuelle Drehbuch und schlage Verbesserungen vor. Berücksichtige dabei die Charaktere, Orte und Hintergrundinformationen. Gib konkrete Vorschläge für Dialoge, Szenenstruktur und Handlung. Formatiere die Vorschläge als markierte Änderungen im Drehbuchformat.`;
+            const response = await callOllama(prompt, context);
+
+            // Zeige die Vorschläge im Chat an
+            addMessage(response);
+
+            // Frage den Benutzer, ob die Änderungen übernommen werden sollen
+            addMessage('Möchten Sie die vorgeschlagenen Änderungen übernehmen? (Antworten Sie mit "Ja" oder "Nein")', false);
+        });
+
+        // Background bearbeiten Funktion
+        document.getElementById('editBackground').addEventListener('click', async () => {
+            const backgroundElement = document.getElementById('background');
+            const locationsElement = document.getElementById('locations');
+
+            // Verwende Charakter-Kacheln statt textarea
+            const charactersText = characters.map(char =>
+                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
+            ).join('\n\n');
+            const locations = locationsElement ? locationsElement.value : '';
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            const context = `CHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nCURRENT BACKGROUND:\n${background}`;
+
+            addMessage('Bearbeite Background...', true);
+
+            const prompt = `Analysiere die aktuellen Hintergrundinformationen und schlage Verbesserungen oder Erweiterungen vor. Berücksichtige dabei die Charaktere, Orte und die aktuelle Handlung. Gib konkrete Vorschläge für Weltbau, Konflikte, Themen und Regeln. Formatiere die Vorschläge als klare, strukturierte Informationen.`;
+            const response = await callOllama(prompt, context);
+
+            // Zeige die Vorschläge im Chat an
+            addMessage(response);
+
+            // Frage den Benutzer, ob die Änderungen übernommen werden sollen
+            addMessage('Möchten Sie die vorgeschlagenen Hintergrundänderungen übernehmen? (Antworten Sie mit "Ja" oder "Nein")', false);
+        });
+
+        // Background lesen Funktion
+        document.getElementById('readBackground').addEventListener('click', async () => {
+            const backgroundElement = document.getElementById('background');
+            const background = backgroundElement ? backgroundElement.value : '';
+
+            if (!background || background.trim() === '') {
+                addMessage('Keine Hintergrundinformationen vorhanden.', false);
+                return;
+            }
+
+            addMessage('Lese Background...', true);
+
+            const prompt = `Zusammenfasse die Hintergrundinformationen und gib eine klare, strukturierte Übersicht über die Welt, Regeln, Konflikte und Themen. Formatiere die Informationen als klare, lesbare Zusammenfassung.`;
+            const response = await callOllama(prompt, `BACKGROUND:\n${background}`);
+
+            // Zeige die Zusammenfassung im Chat an
+            addMessage(response);
+        });
+
         // Chat-Kontext speichern und laden
         async function saveChatContext() {
             const chatMessages = document.getElementById('chatMessages');
@@ -1335,29 +1441,12 @@ FADE OUT."></textarea>
             });
         }
 
-        // Verbesserte Chat-Funktionalität mit Hintergrundinfos
+        // Einfache Chat-Funktionalität
         function enhanceChat() {
             const chatInput = document.getElementById('chatInput');
-            
-            // Platzhalter mit erweiterten Vorschlägen
-            const placeholders = [
-                'Frage an den Dramaturgen...',
-                'Frage zu Charakteren, Orten oder Hintergründen...',
-                'Bitte analysiere die aktuelle Szene...',
-                'Wie kann ich den Dialog verbessern?...',
-                'Erstelle einen Steckbrief für [Charaktername]...'
-            ];
-            
-            let placeholderIndex = 0;
-            chatInput.placeholder = placeholders[placeholderIndex];
-            
-            // Platzhalter rotieren alle 5 Sekunden
-            setInterval(() => {
-                placeholderIndex = (placeholderIndex + 1) % placeholders.length;
-                if (!chatInput.matches(':focus')) {
-                    chatInput.placeholder = placeholders[placeholderIndex];
-                }
-            }, 5000);
+
+            // Einfacher Platzhalter
+            chatInput.placeholder = 'Frage an den Dramaturgen...';
         }
 
         // Upload-Funktion für Knowledge Base mit erweiterter Unterstützung
@@ -1892,3 +1981,4 @@ Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
 </body>
 </html>
             initializeRAG();
+            await loadChatContext();
