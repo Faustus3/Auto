@@ -26,9 +26,9 @@
             height: 100vh;
         }
 
-        /* Linke Spalte - The Bible */
+/* Linke Spalte - The Bible (Agent Storage) */
         .bible-panel {
-            width: 25%;
+            width: 30%;
             background: #1a1a1a;
             border-right: 1px solid #333;
             display: flex;
@@ -39,6 +39,32 @@
             overflow-x: hidden;
             position: relative;
             transition: all 0.3s ease;
+        }
+
+        .agent-storage-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: 1fr;
+        }
+
+        .storage-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .storage-item h4 {
+            color: #8b9dc3;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .storage-textarea {
+            min-height: 80px;
+            font-size: 12px;
         }
 
         .bible-panel::-webkit-scrollbar {
@@ -151,14 +177,16 @@
             border-radius: 3px;
         }
 
-        .character-card {
-            background: #0f0f0f;
-            border: 1px solid #333;
-            border-radius: 4px;
+.character-card {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 5px;
             padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
+            font-size: 11px;
         }
 
         .character-card.editing {
@@ -262,18 +290,24 @@
             color: #8b9dc3;
         }
 
-        .add-character-btn {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: #e0e0e0;
-            padding: 10px;
+.add-character-btn {
+            background: #8b9dc3;
+            border: none;
+            color: #1a1a1a;
+            padding: 6px 12px;
             font-family: 'Courier Prime', monospace;
-            font-size: 12px;
+            font-size: 10px;
             cursor: pointer;
+            transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-top: 10px;
+            border-radius: 3px;
             width: 100%;
-            margin-bottom: 15px;
+        }
+
+        .add-character-btn:hover {
+            background: #c73e1d;
         }
 
         .add-character-btn:hover {
@@ -281,13 +315,13 @@
             border-color: #8b9dc3;
         }
 
-        /* Mittlere Spalte - The Script */
+/* Mittlere Spalte - The Script (Center Focus) */
         .script-panel {
-            width: 50%;
+            width: 45%;
             background: #0f0f0f;
-            border-right: 1px solid #333;
             display: flex;
             flex-direction: column;
+            position: relative;
             transition: all 0.3s ease;
         }
 
@@ -347,14 +381,65 @@
             outline: none;
         }
 
-        /* Rechte Spalte - The Dramaturg */
-        .dramaturg-panel {
+/* Rechte Spalte - The Agent Chat */
+        .chat-panel {
             width: 25%;
             background: #1a1a1a;
+            border-left: 1px solid #333;
             display: flex;
             flex-direction: column;
-            transition: all 0.3s ease;
+            padding: 20px;
+            height: 100vh;
             overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .agent-status-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #888;
+        }
+
+        .status-dot.ready {
+            background: #27ae60;
+        }
+
+        .status-dot.processing {
+            background: #f39c12;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.error {
+            background: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-text {
+            color: #888;
+            font-size: 10px;
+            text-transform: uppercase;
         }
 
         .dramaturg-panel::-webkit-scrollbar {
@@ -552,30 +637,7 @@
             color: #1a1a1a;
         }
 
-        .smart-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding: 0 20px 20px;
-        }
-
-        .action-btn {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: #e0e0e0;
-            padding: 12px;
-            font-family: 'Courier Prime', monospace;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .action-btn:hover {
-            background: #c73e1d;
-            border-color: #c73e1d;
-        }
+/* Clean minimal design - no action buttons needed */
 
         .chat-container {
             flex: 1;
@@ -656,16 +718,22 @@
             border-color: #8b9dc3;
         }
 
-        .send-btn {
-            background: #c73e1d;
+.send-btn {
+            background: #8b9dc3;
             border: none;
-            color: white;
-            padding: 10px 20px;
+            color: #1a1a1a;
+            padding: 10px 15px;
             font-family: 'Courier Prime', monospace;
             font-size: 12px;
             cursor: pointer;
+            transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
+            border-radius: 3px;
+        }
+
+        .send-btn:hover {
+            background: #c73e1d;
         }
 
         .send-btn:hover {
@@ -770,24 +838,29 @@
 </head>
 <body>
     <div class="container">
-        <!-- Linke Spalte - The Bible -->
+        <!-- Linke Spalte - The Bible (Agent Storage Base) -->
         <div class="bible-panel">
             <h2>The Bible<button class="toggle-btn" id="toggleBibleBtn">-</button></h2>
             
             <div class="bible-section">
-                <h3>Charaktere</h3>
-                <button class="add-character-btn" id="addCharacterBtn">Neuer Charakter</button>
-                <div class="character-cards" id="characterCards"></div>
-            </div>
-            
-            <div class="bible-section">
-                <h3>Drehorte</h3>
-                <textarea class="bible-textarea" id="locations" placeholder="ORT&#10;Beschreibung:&#10;Atmosphäre:&#10;Bedeutung:"></textarea>
-            </div>
-            
-            <div class="bible-section">
-                <h3>Hintergründe</h3>
-                <textarea class="bible-textarea" id="background" placeholder="WELT/ZEIT&#10;Regeln:&#10;Konflikte:&#10;Themen:"></textarea>
+                <h3>Agent Storage</h3>
+                <div class="agent-storage-grid">
+                    <div class="storage-item">
+                        <h4>Characters</h4>
+                        <div class="character-cards" id="characterCards"></div>
+                        <button class="add-character-btn" id="addCharacterBtn">+ Add</button>
+                    </div>
+                    
+                    <div class="storage-item">
+                        <h4>Locations</h4>
+                        <textarea class="bible-textarea storage-textarea" id="locations" placeholder="Locations for agent reference..."></textarea>
+                    </div>
+                    
+                    <div class="storage-item">
+                        <h4>Background</h4>
+                        <textarea class="bible-textarea storage-textarea" id="background" placeholder="World building and context for agent..."></textarea>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -813,14 +886,29 @@ FADE OUT."></textarea>
             </div>
         </div>
         
-        <!-- Rechte Spalte - The Dramaturg -->
-        <div class="dramaturg-panel">
-            <div class="dramaturg-header">
-                <h2>Directorial Notes<button class="toggle-btn" id="toggleDramaturgBtn">-</button></h2>
-<div class="ollama-config">
-                    <input type="text" class="ollama-url-input" id="ollamaUrlInput" placeholder="Ollama URL">
-                    <button class="ollama-save-btn" id="saveOllamaUrl">Speichern</button>
+<!-- Rechte Spalte - The Agent Chat -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h2>AI Assistant<button class="toggle-btn" id="toggleChatBtn">-</button></h2>
+                <div class="agent-status-mini">
+                    <span class="status-dot" id="agentStatusDot"></span>
+                    <span class="status-text" id="agentStatusText">Initializing...</span>
                 </div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai-message">
+                        🤖 I'm your intelligent screenplay assistant. I can analyze scenes, check dialogue consistency, generate content, and help develop characters. Ask me anything about your script!
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything about your script...">
+                    <button class="send-btn" id="sendMessageBtn">Send</button>
+                </div>
+            </div>
+        </div>
                 
                 <!-- Agentic AI Status Panel -->
                 <div class="agent-status-panel" id="agentStatusPanel">
@@ -1266,11 +1354,32 @@ function setupAutoSave() {
             }
 
             async initialize() {
-                // Load existing memory from storage
-                const stored = localStorage.getItem('agentMemory');
-                if (stored) {
-                    const data = JSON.parse(stored);
-                    Object.assign(this, data);
+                // Load existing memory from storage with error handling
+                try {
+                    const stored = localStorage.getItem('agentMemory');
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        // Validate data structure
+                        this.shortTermMemory = Array.isArray(data.shortTermMemory) ? data.shortTermMemory : [];
+                        this.longTermMemory = typeof data.longTermMemory === 'object' && data.longTermMemory !== null ? data.longTermMemory : {};
+                        this.scriptMemory = typeof data.scriptMemory === 'object' && data.scriptMemory !== null ? data.scriptMemory : {};
+                        this.learningMemory = typeof data.learningMemory === 'object' && data.learningMemory !== null ? data.learningMemory : {};
+                    } else {
+                        // Initialize with empty data
+                        this.shortTermMemory = [];
+                        this.longTermMemory = {};
+                        this.scriptMemory = {};
+                        this.learningMemory = {};
+                    }
+                } catch (error) {
+                    console.error('AgentMemory initialization failed:', error);
+                    // Reset to empty state
+                    this.shortTermMemory = [];
+                    this.longTermMemory = {};
+                    this.scriptMemory = {};
+                    this.learningMemory = {};
+                    // Clear corrupted data
+                    localStorage.removeItem('agentMemory');
                 }
             }
 
@@ -1740,74 +1849,44 @@ Provide a clear, helpful response that addresses the original task. If there wer
             }
         }
 
-        // Agentic Status Panel Management
+        // Simplified Agentic Status Management
         function setupAgenticStatusPanel() {
             // Update status every 2 seconds
             setInterval(updateAgenticStatus, 2000);
-
-            // Proactive analysis button
-            document.getElementById('agentProactiveBtn')?.addEventListener('click', async () => {
-                if (aiAgent) {
-                    addMessage('🤖 Starting proactive analysis...', true);
-                    const result = await aiAgent.performProactiveAnalysis();
-                    addMessage(result);
-                }
-            });
-
-            // Clear memory button
-            document.getElementById('agentClearMemoryBtn')?.addEventListener('click', async () => {
-                if (aiAgent && confirm('Clear all agent memory? This cannot be undone.')) {
-                    localStorage.removeItem('agentMemory');
-                    await aiAgent.memory.initialize();
-                    addMessage('🤖 Agent memory cleared', false);
-                }
-            });
         }
 
         function updateAgenticStatus() {
             if (!aiAgent) return;
 
             const status = aiAgent.getStatus();
-            const statusElement = document.getElementById('agentStatus');
-            const taskElement = document.getElementById('agentCurrentTask');
-            const queueElement = document.getElementById('agentQueue');
-            const memoryElement = document.getElementById('agentMemory');
+            const statusDot = document.getElementById('agentStatusDot');
+            const statusText = document.getElementById('agentStatusText');
 
-            // Update status
+            // Update status indicator
             if (status.isProcessing) {
-                statusElement.textContent = 'Processing';
-                statusElement.className = 'status-value processing';
+                statusDot.className = 'status-dot processing';
+                statusText.textContent = 'Working';
             } else {
-                statusElement.textContent = 'Ready';
-                statusElement.className = 'status-value ready';
+                statusDot.className = 'status-dot ready';
+                statusText.textContent = 'Ready';
             }
-
-            // Update current task
-            taskElement.textContent = status.currentTask || 'None';
-
-            // Update queue
-            queueElement.textContent = status.queueLength;
-
-            // Update memory
-            memoryElement.textContent = status.memorySize;
         }
 
-        // Enhanced initialization with agentic system
+        // Clean initialization with minimal agentic system
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
             setupAutoSave();
             setupManualToggle();
             enhanceChat();
-            setupUpload();
             setupChatControls();
 
             // Initialize the agentic system
             aiAgent = new AIAgent();
             await aiAgent.initialize();
-            console.log('🤖 Agentic AI System ready');
+            console.log('🤖 Agentic AI System initialized successfully');
 
-            // Setup agentic status panel
+            // Setup simplified status panel
             setupAgenticStatusPanel();
 
             // Chat-Kontext laden
@@ -1816,22 +1895,8 @@ Provide a clear, helpful response that addresses the original task. If there wer
             // RAG initialisieren (im Hintergrund, nicht blockierend)
             initializeRAG();
 
-            // Aktuelle Ollama URL anzeigen
-            const currentUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
-            document.getElementById('ollamaUrlInput').placeholder = `Aktuell: ${currentUrl}`;
-
-            // Memory Bank Status nach dem Laden überprüfen
-            setTimeout(checkMemoryBank, 1000);
-
-            // Start proactive analysis after a delay
-            setTimeout(() => {
-                if (aiAgent) {
-                    aiAgent.performProactiveAnalysis();
-                }
-            }, 3000);
-        });
+            console.log('🎬 Director\'s Script Engine (Minimal Agentic Edition) ready');
+});
     </script>
 </body>
 </html>
-            initializeRAG();
-            await loadChatContext();
