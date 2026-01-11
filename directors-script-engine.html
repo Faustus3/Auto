@@ -13,59 +13,266 @@
             box-sizing: border-box;
         }
 
-        body {
+body {
             font-family: 'Courier Prime', monospace;
             background: #0a0a0a;
             color: #e0e0e0;
             height: 100vh;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
-        .container {
+        .main-container {
             display: flex;
             height: 100vh;
+            position: relative;
         }
 
-/* Linke Spalte - The Bible (Agent Storage) */
-        .bible-panel {
-            width: 30%;
-            background: #1a1a1a;
-            border-right: 1px solid #333;
+        /* Panel Base Styles */
+        .memory-panel, .script-panel, .agent-panel {
+            background: #0f0f0f;
+            border: 1px solid #1a1a1a;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            position: relative;
             transition: all 0.3s ease;
+            overflow: hidden;
         }
 
-        .agent-storage-grid {
-            display: grid;
-            gap: 20px;
-            grid-template-columns: 1fr;
+        .memory-panel {
+            width: 25%;
+            border-right: 1px solid #2a2a2a;
         }
 
-        .storage-item {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 5px;
-            padding: 15px;
+        .script-panel {
+            width: 40%;
+            background: #0d0d0d;
+            border-right: 1px solid #1a1a1a;
         }
 
-        .storage-item h4 {
+        .agent-panel {
+            width: 35%;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            min-height: 60px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 16px;
             color: #8b9dc3;
-            margin: 0 0 10px 0;
-            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        .storage-textarea {
-            min-height: 80px;
+        .toggle-btn {
+            background: none;
+            border: 1px solid #444;
+            color: #888;
+            padding: 5px 10px;
             font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
         }
+
+.toggle-btn:hover {
+            background: #333;
+            color: #e0e0e0;
+        }
+
+        /* Agent Status */
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+
+        .status-dot.ready {
+            background: #27ae60;
+        }
+
+        .status-dot.working {
+            background: #f39c12;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Memory Panel Styles */
+        .memory-content, .script-content, .agent-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .memory-section {
+            margin-bottom: 25px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #8b9dc3;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .add-btn {
+            background: #8b9dc3;
+            border: none;
+            color: #0a0a0a;
+            padding: 6px 12px;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #c73e1d;
+        }
+
+        .memory-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .memory-notes {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .note-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .note-textarea {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            min-height: 100px;
+            width: 100%;
+            resize: vertical;
+        }
+
+        /* Script Panel Styles */
+        .script-editor {
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            color: #e0e0e0;
+            padding: 20px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 14px;
+            border-radius: 5px;
+            width: 100%;
+            height: calc(100vh - 100px);
+            resize: none;
+            line-height: 1.5;
+        }
+
+        /* Agent Panel Styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            padding: 12px 15px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 12px;
+            border-radius: 5px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #8b9dc3;
+        }
+
+        /* Panel Toggle States */
+        .memory-panel.collapsed {
+            width: 50px;
+        }
+
+        .memory-panel.collapsed .memory-content {
+            display: none;
+        }
+
+        .script-panel.collapsed {
+            width: 0;
+            margin: 0;
+        }
+
+        .script-panel.collapsed .script-content {
+            display: none;
+        }
+
+        .agent-panel.collapsed {
+            width: 50px;
+        }
+
+        .agent-panel.collapsed .agent-content {
+            display: none;
+        }
+        /* Old duplicate styles removed */
 
         .bible-panel::-webkit-scrollbar {
             width: 8px;
@@ -177,16 +384,22 @@
             border-radius: 3px;
         }
 
-.character-card {
-            background: #333;
-            border: 1px solid #555;
+./* Character Cards - Memory Style */
+        .memory-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
             border-radius: 5px;
             padding: 12px;
             margin-bottom: 10px;
-            position: relative;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 11px;
+            font-size: 12px;
+            color: #e0e0e0;
+        }
+
+        .memory-card:hover {
+            background: #2a2a2a;
+            border-color: #444;
         }
 
         .character-card.editing {
@@ -290,10 +503,11 @@
             color: #8b9dc3;
         }
 
-.add-character-btn {
+/* Button Styles - consolidated */
+        .add-btn {
             background: #8b9dc3;
             border: none;
-            color: #1a1a1a;
+            color: #0a0a0a;
             padding: 6px 12px;
             font-family: 'Courier Prime', monospace;
             font-size: 10px;
@@ -301,12 +515,15 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 10px;
             border-radius: 3px;
-            width: 100%;
+            margin-top: 10px;
         }
 
-        .add-character-btn:hover {
+        .add-btn:hover {
+            background: #c73e1d;
+        }
+
+        .add-btn:hover {
             background: #c73e1d;
         }
 
@@ -837,19 +1054,95 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Linke Spalte - The Bible (Agent Storage Base) -->
-        <div class="bible-panel">
-            <h2>The Bible<button class="toggle-btn" id="toggleBibleBtn">-</button></h2>
-            
-            <div class="bible-section">
-                <h3>Agent Storage</h3>
-                <div class="agent-storage-grid">
-                    <div class="storage-item">
-                        <h4>Characters</h4>
-                        <div class="character-cards" id="characterCards"></div>
-                        <button class="add-character-btn" id="addCharacterBtn">+ Add</button>
+    <div class="main-container">
+        <!-- Left Column - Memory Cards (The Bible) -->
+        <div class="memory-panel" id="memoryPanel">
+            <div class="panel-header">
+                <h2>📚 Memory</h2>
+                <button class="toggle-btn" id="toggleMemoryBtn">◀</button>
+            </div>
+            <div class="memory-content" id="memoryContent">
+                <div class="memory-section">
+                    <div class="section-header">
+                        <h3>👥 Characters</h3>
+                        <button class="add-btn" id="addCharacterBtn">+ Add</button>
                     </div>
+                    <div class="memory-cards" id="characterCards"></div>
+                </div>
+                
+                <div class="memory-section">
+                    <div class="section-header">
+                        <h3>📍 Locations</h3>
+                    </div>
+                    <div class="memory-notes" id="locationsNotes">
+                        <div class="note-card">
+                            <textarea class="note-textarea" id="locations" placeholder="Add locations and descriptions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="memory-section">
+                    <div class="section-header">
+                        <h3>🌍 World</h3>
+                    </div>
+                    <div class="memory-notes" id="worldNotes">
+                        <div class="note-card">
+                            <textarea class="note-textarea" id="background" placeholder="World building, rules, themes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Center Column - Script (Main Focus) -->
+        <div class="script-panel" id="scriptPanel">
+            <div class="panel-header">
+                <h2>📝 Script</h2>
+                <button class="toggle-btn" id="toggleScriptBtn">▶</button>
+            </div>
+            <div class="script-content">
+                <textarea class="script-editor" id="script" placeholder="FADE IN:
+
+EXT. LOCATION - DAY
+
+Scene description here.
+
+                    CHARACTER
+            Dialogue here.
+
+                    ANOTHER CHARACTER
+            Response here.
+
+FADE OUT."></textarea>
+            </div>
+        </div>
+        
+        <!-- Right Column - Interactive Agent -->
+        <div class="agent-panel" id="agentPanel">
+            <div class="panel-header">
+                <h2>🤖 Agent</h2>
+                <button class="toggle-btn" id="toggleAgentBtn">▶</button>
+                <div class="agent-status" id="agentStatus">
+                    <span class="status-dot" id="statusDot"></span>
+                </div>
+            </div>
+            
+            <div class="agent-content">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai-message">
+                            👋 I'm your screenplay assistant. I can edit any content, analyze scenes, develop characters, and help with story development. Ask me anything!
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Talk to me about your script...">
+                        <button class="send-btn" id="sendMessageBtn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
                     
                     <div class="storage-item">
                         <h4>Locations</h4>
@@ -1855,48 +2148,204 @@ Provide a clear, helpful response that addresses the original task. If there wer
             setInterval(updateAgenticStatus, 2000);
         }
 
+        // Panel Toggle Functionality
+        function setupPanelToggles() {
+            // Memory Panel Toggle
+            document.getElementById('toggleMemoryBtn').addEventListener('click', () => {
+                const memoryPanel = document.getElementById('memoryPanel');
+                const toggleBtn = document.getElementById('toggleMemoryBtn');
+                
+                memoryPanel.classList.toggle('collapsed');
+                toggleBtn.textContent = memoryPanel.classList.contains('collapsed') ? '▶' : '◀';
+            });
+
+            // Script Panel Toggle
+            document.getElementById('toggleScriptBtn').addEventListener('click', () => {
+                const scriptPanel = document.getElementById('scriptPanel');
+                const toggleBtn = document.getElementById('toggleScriptBtn');
+                
+                scriptPanel.classList.toggle('collapsed');
+                toggleBtn.textContent = scriptPanel.classList.contains('collapsed') ? '▶' : '▶';
+            });
+
+            // Agent Panel Toggle
+            document.getElementById('toggleAgentBtn').addEventListener('click', () => {
+                const agentPanel = document.getElementById('agentPanel');
+                const toggleBtn = document.getElementById('toggleAgentBtn');
+                
+                agentPanel.classList.toggle('collapsed');
+                toggleBtn.textContent = agentPanel.classList.contains('collapsed') ? '▶' : '▶';
+            });
+        }
+
+        // Interactive Agent - Edit Content Functionality
+        function setupInteractiveAgent() {
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendMessageBtn');
+
+            sendBtn.addEventListener('click', () => processAgentCommand());
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    processAgentCommand();
+                }
+            });
+        }
+
+        function processAgentCommand() {
+            const input = document.getElementById('chatInput').value.trim();
+            if (!input) return;
+
+            const addMessage = (text, isUser = false) => {
+                const messagesDiv = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+                messageDiv.textContent = text;
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            };
+
+            // Check if it's a command to edit content
+            if (input.toLowerCase().startsWith('/')) {
+                handleContentCommand(input, addMessage);
+            } else {
+                // Regular chat message - use agentic system
+                if (aiAgent) {
+                    aiAgent.executeTask(input, {
+                        script: document.getElementById('script').value,
+                        characters: Array.from(document.getElementById('characterCards').children).map(card => card.textContent),
+                        locations: document.getElementById('locations').value,
+                        background: document.getElementById('background').value
+                    }).then(response => {
+                        addMessage(response, false);
+                    });
+                }
+            }
+
+            // Clear input
+            document.getElementById('chatInput').value = '';
+        }
+
+        function handleContentCommand(command, addMessage) {
+            const parts = command.substring(1).split(' ');
+            const action = parts[0].toLowerCase();
+            const content = parts.slice(1).join(' ');
+
+            switch (action) {
+                case 'script':
+                    editScript(content, addMessage);
+                    break;
+                case 'character':
+                    addCharacterCard(content, addMessage);
+                    break;
+                case 'location':
+                    editLocations(content, addMessage);
+                    break;
+                case 'world':
+                    editWorld(content, addMessage);
+                    break;
+                case 'help':
+                    showHelpCommands(addMessage);
+                    break;
+                default:
+                    addMessage(`Unknown command. Use /help for commands.`, false);
+            }
+        }
+
+        function editScript(content, addMessage) {
+            const scriptElement = document.getElementById('script');
+            if (content) {
+                scriptElement.value = content;
+                saveData('script', content);
+                addMessage('✅ Script updated', false);
+            } else {
+                addMessage('❌ Please provide content: /script "your text here"', false);
+            }
+        }
+
+        function addCharacterCard(name, addMessage) {
+            if (name) {
+                const characterCards = document.getElementById('characterCards');
+                const newCard = document.createElement('div');
+                newCard.className = 'memory-card';
+                newCard.textContent = name;
+                characterCards.appendChild(newCard);
+                addMessage(`✅ Character added: ${name}`, false);
+            } else {
+                addMessage('❌ Please provide name: /character "Character Name"', false);
+            }
+        }
+
+        function editLocations(content, addMessage) {
+            const locationsElement = document.getElementById('locations');
+            if (content) {
+                locationsElement.value = content;
+                saveData('locations', content);
+                addMessage('✅ Locations updated', false);
+            } else {
+                addMessage('❌ Please provide content: /location "location description"', false);
+            }
+        }
+
+        function editWorld(content, addMessage) {
+            const backgroundElement = document.getElementById('background');
+            if (content) {
+                backgroundElement.value = content;
+                saveData('background', content);
+                addMessage('✅ World updated', false);
+            } else {
+                addMessage('❌ Please provide content: /world "world building info"', false);
+            }
+        }
+
+        function showHelpCommands(addMessage) {
+            const helpText = `📝 **Available Commands:**
+/script "text" - Edit script content
+/character "name" - Add character card
+/location "text" - Edit locations
+/world "text" - Edit world building
+/help - Show this help message
+
+You can also just chat with me normally for AI assistance!`;
+            addMessage(helpText, false);
+        }
+
         function updateAgenticStatus() {
             if (!aiAgent) return;
 
             const status = aiAgent.getStatus();
-            const statusDot = document.getElementById('agentStatusDot');
-            const statusText = document.getElementById('agentStatusText');
+            const statusDot = document.getElementById('statusDot');
 
             // Update status indicator
             if (status.isProcessing) {
-                statusDot.className = 'status-dot processing';
-                statusText.textContent = 'Working';
+                statusDot.className = 'status-dot working';
             } else {
                 statusDot.className = 'status-dot ready';
-                statusText.textContent = 'Ready';
             }
         }
 
-        // Clean initialization with minimal agentic system
+// Clean initialization with minimal agentic system
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
             setupAutoSave();
-            setupManualToggle();
             enhanceChat();
             setupChatControls();
 
-            // Initialize the agentic system
+            // Initialize agentic system
             aiAgent = new AIAgent();
             await aiAgent.initialize();
             console.log('🤖 Agentic AI System initialized successfully');
 
-            // Setup simplified status panel
+            // Setup interface components
             setupAgenticStatusPanel();
-
-            // Chat-Kontext laden
-            await loadChatContext();
+            setupPanelToggles();
+            setupInteractiveAgent();
 
             // RAG initialisieren (im Hintergrund, nicht blockierend)
             initializeRAG();
 
-            console.log('🎬 Director\'s Script Engine (Minimal Agentic Edition) ready');
-});
+            console.log('🎬 Director\'s Script Engine (Clean 3-Column Interface) ready');
+        });
     </script>
 </body>
 </html>
