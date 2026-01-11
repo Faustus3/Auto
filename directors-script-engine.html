@@ -2204,6 +2204,9 @@ Provide a clear, helpful response that addresses the original task. If there wer
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             };
 
+            // Add user message to chat
+            addMessage(input, true);
+
             // Check if it's a command to edit content
             if (input.toLowerCase().startsWith('/')) {
                 handleContentCommand(input, addMessage);
@@ -2217,7 +2220,12 @@ Provide a clear, helpful response that addresses the original task. If there wer
                         background: document.getElementById('background').value
                     }).then(response => {
                         addMessage(response, false);
+                    }).catch(error => {
+                        console.error('Error executing task:', error);
+                        addMessage('🤖 Error: Could not process your request. Please check the console for details.', false);
                     });
+                } else {
+                    addMessage('🤖 Agent is not initialized. Please wait a moment and try again.', false);
                 }
             }
 
