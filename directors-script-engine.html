@@ -394,6 +394,46 @@
             align-items: center;
         }
 
+        .chat-expand-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 10px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .chat-expand-btn:hover {
+            background: #c73e1d;
+            border-color: #c73e1d;
+        }
+
+        .chat-clear-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .chat-clear-btn:hover {
+            background: #ff4444;
+            border-color: #ff4444;
+        }
+
         .ollama-config {
             display: flex;
             gap: 10px;
@@ -428,8 +468,88 @@
             letter-spacing: 1px;
         }
 
-        .ollama-save-btn:hover {
+.ollama-save-btn:hover {
             background: #5aad5a;
+        }
+
+        /* Agentic AI Status Panel Styles */
+        .agent-status-panel {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .agent-status-panel h4 {
+            color: #8b9dc3;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .agent-status-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+        }
+
+        .status-label {
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            color: #e0e0e0;
+            font-weight: bold;
+        }
+
+        .status-value.processing {
+            color: #f39c12;
+        }
+
+        .status-value.ready {
+            color: #27ae60;
+        }
+
+        .status-value.error {
+            color: #e74c3c;
+        }
+
+        .agent-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .agent-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 3px;
+            flex: 1;
+        }
+
+        .agent-btn:hover {
+            background: #8b9dc3;
+            border-color: #8b9dc3;
+            color: #1a1a1a;
         }
 
         .smart-actions {
@@ -473,7 +593,12 @@
             border: 1px solid #333;
             border-radius: 4px;
             min-height: 200px;
-            max-height: 50vh;
+            max-height: 70vh;
+            transition: max-height 0.3s ease;
+        }
+
+        .chat-messages.expanded {
+            max-height: 85vh;
         }
 
         .chat-messages::-webkit-scrollbar {
@@ -692,9 +817,41 @@ FADE OUT."></textarea>
         <div class="dramaturg-panel">
             <div class="dramaturg-header">
                 <h2>Directorial Notes<button class="toggle-btn" id="toggleDramaturgBtn">-</button></h2>
-                <div class="ollama-config">
+<div class="ollama-config">
                     <input type="text" class="ollama-url-input" id="ollamaUrlInput" placeholder="Ollama URL">
                     <button class="ollama-save-btn" id="saveOllamaUrl">Speichern</button>
+                </div>
+                
+                <!-- Agentic AI Status Panel -->
+                <div class="agent-status-panel" id="agentStatusPanel">
+                    <h4>🤖 Agentic AI Status</h4>
+                    <div class="agent-status-info">
+                        <div class="status-item">
+                            <span class="status-label">Status:</span>
+                            <span class="status-value" id="agentStatus">Initializing...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Current Task:</span>
+                            <span class="status-value" id="agentCurrentTask">None</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Queue:</span>
+                            <span class="status-value" id="agentQueue">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Memory:</span>
+                            <span class="status-value" id="agentMemory">0</span>
+                        </div>
+                    </div>
+                    <div class="agent-controls">
+                        <button class="agent-btn" id="agentProactiveBtn">Proactive Analysis</button>
+                        <button class="agent-btn" id="agentClearMemoryBtn">Clear Memory</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <button class="chat-expand-btn" id="expandChatBtn">Chat vergrößern</button>
+                    <button class="chat-clear-btn" id="clearChatBtn">Chat löschen</button>
                 </div>
             </div>
             
@@ -996,996 +1153,646 @@ FADE OUT."></textarea>
             return character;
         }
 
-        // Auto-Save Funktion
-        function setupAutoSave() {
+// Enhanced Auto-Save with Proactive Analysis
+function setupAutoSave() {
             const elements = ['locations', 'background', 'script'];
+            let proactiveTimeout = null;
 
             elements.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.addEventListener('input', () => {
                         saveData(id, element.value);
-                    });
-                }
-            });
-        }
-
-        // Ollama API Call - Konfigurierbare URL für lokale/dev und remote/production
-        async function callOllama(prompt, context) {
-            // URL konfigurierbar machen - standardmäßig localhost für Entwicklung
-            const ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
-
-            try {
-                const response = await fetch(ollamaUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: 'llama3.2',
-                        prompt: `${context}\n\n${prompt}`,
-                        stream: false
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // Debug: Log the response to see its structure
-                console.log('Ollama Response:', data);
-
-                // Check if response exists and has the correct property
-                if (data && data.response) {
-                    return data.response;
-                } else if (data && data.text) {
-                    return data.text;
-                } else if (data && typeof data === 'string') {
-                    return data;
-                } else {
-                    console.error('Unexpected response format:', data);
-                    return 'Unerwartetes Antwortformat von Ollama';
-                }
-            } catch (error) {
-                console.error('Ollama API Error:', error);
-
-                // Spezifische CORS/HTTPS-Fehlerbehandlung
-                if (error.message.includes('CORS') || error.message.includes('Mixed Content')) {
-                    return `CORS-Fehler: Die Website (HTTPS) kann nicht auf lokales Ollama (HTTP) zugreifen.\n\nLösungen:\n1. Ollama mit CORS starten: OLLAMA_ORIGINS=https://sohaltweil.de ollama serve\n2. Ollama auf HTTPS-Server hosten\n3. Browser-Einstellungen anpassen (unsichere Inhalte erlauben)\n\nTechnischer Fehler: ${error.message}`;
-                }
-
-                return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass:\n- Ollama läuft (${ollamaUrl})\n- Das Modell 'llama3.2' verfügbar ist\n- CORS für diese Domain erlaubt ist`;
-            }
-        }
-
-        // Nachricht zum Chat hinzufügen
-        function addMessage(text, isUser = false) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Smart Actions - Sicherheitsprüfungen für DOM-Elemente
-        document.getElementById('analyzeScene').addEventListener('click', async () => {
-            const scriptElement = document.getElementById('script');
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-
-            const script = scriptElement ? scriptElement.value : '';
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-            addMessage('Analysiere Szene...', true);
-
-            const prompt = 'Analysiere diese Szene auf Pacing, Spannungsbogen und Subtext. Gib konstruktive Hinweise für die Regie.';
-            const response = await callOllama(prompt, context);
-
-            addMessage(response);
-        });
-
-        document.getElementById('dialogCheck').addEventListener('click', async () => {
-            const scriptElement = document.getElementById('script');
-
-            const script = scriptElement ? scriptElement.value : '';
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nPersönlichkeit: ${char.personality}`
-            ).join('\n\n');
-
-            const context = `CHARACTERS:\n${charactersText}\n\nSCRIPT:\n${script}`;
-
-            addMessage('Prüfe Dialoge...', true);
-
-            const prompt = 'Prüfe, ob die Dialoge der Charaktere konsistent mit ihren beschriebenen Persönlichkeiten sind. Gib spezifische Hinweise für jeden Charakter.';
-            const response = await callOllama(prompt, context);
-
-            addMessage(response);
-        });
-
-        document.getElementById('continueWriting').addEventListener('click', async () => {
-            const scriptElement = document.getElementById('script');
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-
-            const script = scriptElement ? scriptElement.value : '';
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-            addMessage('Schreibe weiter...', true);
-
-            const prompt = 'Schlage die nächsten 5-10 Zeilen des Drehbuchs vor, die sich nahtlos an die letzte Szene anschließen. Halte dich an das Format und die Charaktere.';
-            const response = await callOllama(prompt, context);
-
-            addMessage(response);
-        });
-
-        // Skript schreiben Funktion
-        document.getElementById('writeScript').addEventListener('click', async () => {
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `CHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-            addMessage('Schreibe neues Skript...', true);
-
-            const prompt = `Schreibe ein komplett neues Drehbuch basierend auf den Charakteren, Orten und Hintergrundinformationen. Das Drehbuch sollte eine klare Struktur mit Einführung, Konflikt und Auflösung haben. Verwende das Standard-Drehbuchformat mit Szenenbeschreibungen und Dialogen.`;
-            const response = await callOllama(prompt, context);
-
-            // Setze das generierte Skript in das Skriptfeld
-            const scriptElement = document.getElementById('script');
-            if (scriptElement) {
-                scriptElement.value = response;
-                await saveData('script', response);
-            }
-
-            addMessage('Neues Skript wurde generiert!');
-        });
-
-        // Skript bearbeiten Funktion
-        document.getElementById('editScript').addEventListener('click', async () => {
-            const scriptElement = document.getElementById('script');
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-
-            const script = scriptElement ? scriptElement.value : '';
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `CURRENT SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-            addMessage('Bearbeite Skript...', true);
-
-            const prompt = `Analysiere das aktuelle Drehbuch und schlage Verbesserungen vor. Berücksichtige dabei die Charaktere, Orte und Hintergrundinformationen. Gib konkrete Vorschläge für Dialoge, Szenenstruktur und Handlung. Formatiere die Vorschläge als markierte Änderungen im Drehbuchformat.`;
-            const response = await callOllama(prompt, context);
-
-            // Zeige die Vorschläge im Chat an
-            addMessage(response);
-
-            // Frage den Benutzer, ob die Änderungen übernommen werden sollen
-            addMessage('Möchten Sie die vorgeschlagenen Änderungen übernehmen? (Antworten Sie mit "Ja" oder "Nein")', false);
-        });
-
-        // Progressives Schreiben Funktion
-        document.getElementById('progressiveWriting').addEventListener('click', async () => {
-            const scriptElement = document.getElementById('script');
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-
-            const script = scriptElement ? scriptElement.value : '';
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `CURRENT SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-            addMessage('Starte progressives Schreiben...', true);
-
-            // Starten Sie einen interaktiven Schreibprozess mit dem LLM
-            const prompt = `Ich möchte ein Drehbuch progressiv mit Ihnen entwickeln. Bitte analysieren Sie das aktuelle Skript und schlagen Sie vor, wie wir es gemeinsam weiterentwickeln können. Fragen Sie mich gezielte Fragen zu Charakteren, Handlung oder Szenen, um den Schreibprozess voranzutreiben. Geben Sie mir konkrete Vorschläge und Optionen, zwischen denen ich wählen kann.`;
-            const response = await callOllama(prompt, context);
-
-            // Zeige die Vorschläge im Chat an
-            addMessage(response);
-
-            // Frage den Benutzer nach Feedback oder weiteren Anweisungen
-            addMessage('Wie möchten Sie fortfahren? Sie können mir spezifische Anweisungen geben oder zwischen den vorgeschlagenen Optionen wählen.', false);
-        });
-
-        // Background bearbeiten Funktion
-        document.getElementById('editBackground').addEventListener('click', async () => {
-            const backgroundElement = document.getElementById('background');
-            const locationsElement = document.getElementById('locations');
-
-            // Verwende Charakter-Kacheln statt textarea
-            const charactersText = characters.map(char =>
-                `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}\nMotivation: ${char.motivation}\nHintergrund: ${char.background}`
-            ).join('\n\n');
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            const context = `CHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nCURRENT BACKGROUND:\n${background}`;
-
-            addMessage('Bearbeite Background...', true);
-
-            const prompt = `Analysiere die aktuellen Hintergrundinformationen und schlage Verbesserungen oder Erweiterungen vor. Berücksichtige dabei die Charaktere, Orte und die aktuelle Handlung. Gib konkrete Vorschläge für Weltbau, Konflikte, Themen und Regeln. Formatiere die Vorschläge als klare, strukturierte Informationen.`;
-            const response = await callOllama(prompt, context);
-
-            // Zeige die Vorschläge im Chat an
-            addMessage(response);
-
-            // Frage den Benutzer, ob die Änderungen übernommen werden sollen
-            addMessage('Möchten Sie die vorgeschlagenen Hintergrundänderungen übernehmen? (Antworten Sie mit "Ja" oder "Nein")', false);
-        });
-
-        // Background lesen Funktion
-        document.getElementById('readBackground').addEventListener('click', async () => {
-            const backgroundElement = document.getElementById('background');
-            const background = backgroundElement ? backgroundElement.value : '';
-
-            if (!background || background.trim() === '') {
-                addMessage('Keine Hintergrundinformationen vorhanden.', false);
-                return;
-            }
-
-            addMessage('Lese Background...', true);
-
-            const prompt = `Zusammenfasse die Hintergrundinformationen und gib eine klare, strukturierte Übersicht über die Welt, Regeln, Konflikte und Themen. Formatiere die Informationen als klare, lesbare Zusammenfassung.`;
-            const response = await callOllama(prompt, `BACKGROUND:\n${background}`);
-
-            // Zeige die Zusammenfassung im Chat an
-            addMessage(response);
-        });
-
-        // Chat-Kontext speichern und laden
-        async function saveChatContext() {
-            const chatMessages = document.getElementById('chatMessages');
-            const messages = Array.from(chatMessages.children).map(msg => ({
-                text: msg.textContent,
-                isUser: msg.classList.contains('user-message')
-            }));
-            await saveData('chatContext', messages);
-        }
-
-        async function loadChatContext() {
-            const messages = await loadData('chatContext') || [];
-            const chatMessages = document.getElementById('chatMessages');
-            
-            // Nur laden wenn keine aktuellen Nachrichten vorhanden sind
-            if (chatMessages.children.length <= 1) {
-                messages.forEach(msg => {
-                    addMessage(msg.text, msg.isUser);
-                });
-            }
-        }
-
-        // Chat-Funktionalität
-        document.getElementById('sendMessageBtn').addEventListener('click', async () => {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            addMessage(message, true);
-            input.value = '';
-
-            // Chat-Kontext speichern
-            await saveChatContext();
-
-            // Prüfe auf Charakter-Erstellungsbefehle
-            const characterMatch = message.match(/(erstelle|create).*steckbrief.*für\s+(.+)/i) ||
-                                   message.match(/(erstelle|create).*(charakter|character).*\s+(.+)/i);
-
-            if (characterMatch) {
-                const characterName = characterMatch[2].trim();
-                addMessage(`Erstelle Steckbrief für ${characterName}...`, false);
-
-                const script = document.getElementById('script').value;
-                const context = `SCRIPT:\n${script}\n\nErstelle einen detaillierten Steckbrief für den Charakter "${characterName}". Gib die Informationen in folgendem Format zurück:\n\nName: ${characterName}\nAlter: [z.B. 25]\nAussehen: [detaillierte Beschreibung]\nPersönlichkeit: [z.B. introvertiert, ehrgeizig]\nMotivation: [Hauptziele und Antriebe]\nHintergrund: [kurze Lebensgeschichte]\nRolle: [Protagonist/Antagonist/Nebenfigur]`;
-
-                try {
-                    const response = await callOllama(`Erstelle einen strukturierten Steckbrief für den Charakter "${characterName}" basierend auf dem Skript. Antworte nur mit den formatierten Informationen, keine zusätzlichen Kommentare.`, context);
-                    addMessage(`Steckbrief für ${characterName} erstellt!`, false);
-
-                    // Parse die Antwort und erstelle eine Charakter-Kachel
-                    const characterData = parseCharacterFromResponse(response, characterName);
-                    addCharacter(characterData);
-
-                    addMessage(`Charakter "${characterName}" wurde zur Bible hinzugefügt.`, false);
-                    
-                    // Chat-Kontext nach erfolgreicher Charakter-Erstellung speichern
-                    await saveChatContext();
-                } catch (error) {
-                    addMessage(`Fehler beim Erstellen des Steckbriefs: ${error.message}`, false);
-                }
-            } else {
-                // Normale Chat-Funktionalität
-                const scriptElement = document.getElementById('script');
-                const locationsElement = document.getElementById('locations');
-                const backgroundElement = document.getElementById('background');
-
-                const script = scriptElement ? scriptElement.value : '';
-                // Verwende Charakter-Kacheln statt textarea
-                const charactersText = characters.map(char =>
-                    `${char.name}: ${char.summary}\nAlter: ${char.age}\nPersönlichkeit: ${char.personality}`
-                ).join('\n\n');
-                const locations = locationsElement ? locationsElement.value : '';
-                const background = backgroundElement ? backgroundElement.value : '';
-
-                const context = `SCRIPT:\n${script}\n\nCHARACTERS:\n${charactersText}\n\nLOCATIONS:\n${locations}\n\nBACKGROUND:\n${background}`;
-
-                const response = await callOllama(message, context);
-                addMessage(response);
-                
-                // Chat-Kontext nach Antwort speichern
-                await saveChatContext();
-            }
-        });
-
-        // Enter-Taste für Chat
-        document.getElementById('chatInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('sendMessageBtn').click();
-            }
-        });
-
-        // Export-Funktion
-        document.getElementById('exportBtn').addEventListener('click', async () => {
-            const locationsElement = document.getElementById('locations');
-            const backgroundElement = document.getElementById('background');
-            const scriptElement = document.getElementById('script');
-
-            const locations = locationsElement ? locationsElement.value : '';
-            const background = backgroundElement ? backgroundElement.value : '';
-            const script = scriptElement ? scriptElement.value : '';
-
-            const exportData = {
-                characterCards: characters, // Neue Charakter-Kacheln
-                locations: locations,
-                background: background,
-                script: script,
-                exportedAt: new Date().toISOString()
-            };
-
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `script-export-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-
-            URL.revokeObjectURL(url);
-            addMessage('Arbeit wurde als JSON exportiert.', false);
-        });
-
-        // Ollama URL Konfiguration
-        document.getElementById('saveOllamaUrl').addEventListener('click', () => {
-            const url = document.getElementById('ollamaUrlInput').value.trim();
-            if (url) {
-                localStorage.setItem('ollamaUrl', url);
-                addMessage(`Ollama URL gespeichert: ${url}`, false);
-                document.getElementById('ollamaUrlInput').value = '';
-            } else {
-                addMessage('Bitte geben Sie eine gültige URL ein.', false);
-            }
-        });
-
-        // Neuer Charakter Button
-        document.getElementById('addCharacterBtn').addEventListener('click', () => {
-            console.log('Neuer Charakter Button geklickt');
-            addCharacter();
-            addMessage('Neuer Charakter wurde zur Bible hinzugefügt.', false);
-        });
-
-        // Memory Bank Status überprüfen
-        async function checkMemoryBank() {
-            const memoryStatus = {
-                characters: characters.length,
-                locations: (await loadData('locations') || '').length,
-                background: (await loadData('background') || '').length,
-                script: (await loadData('script') || '').length,
-                totalEntries: 0
-            };
-
-            memoryStatus.totalEntries = memoryStatus.characters +
-                                       (memoryStatus.locations > 0 ? 1 : 0) +
-                                       (memoryStatus.background > 0 ? 1 : 0) +
-                                       (memoryStatus.script > 0 ? 1 : 0);
-
-            console.log('Memory Bank Status:', memoryStatus);
-            addMessage(`Memory Bank: ${memoryStatus.characters} Charaktere, ${memoryStatus.totalEntries} Einträge gespeichert.`, false);
-
-            return memoryStatus;
-        }
-
-        // Manuelle Toggle-Funktionalität für Panels
-        function setupManualToggle() {
-            const toggleBibleBtn = document.getElementById('toggleBibleBtn');
-            const toggleDramaturgBtn = document.getElementById('toggleDramaturgBtn');
-            const biblePanel = document.querySelector('.bible-panel');
-            const scriptPanel = document.querySelector('.script-panel');
-            const dramaturgPanel = document.querySelector('.dramaturg-panel');
-
-            // Bible Panel Toggle
-            toggleBibleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                biblePanel.classList.toggle('collapsed');
-                
-                if (biblePanel.classList.contains('collapsed')) {
-                    toggleBibleBtn.textContent = '+';
-                    scriptPanel.style.width = 'calc(75% - 1px)';
-                    dramaturgPanel.style.width = '25%';
-                } else {
-                    toggleBibleBtn.textContent = '-';
-                    scriptPanel.style.width = '50%';
-                    dramaturgPanel.style.width = '25%';
-                }
-            });
-
-            // Dramaturg Panel Toggle
-            toggleDramaturgBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                dramaturgPanel.classList.toggle('collapsed');
-                
-                if (dramaturgPanel.classList.contains('collapsed')) {
-                    toggleDramaturgBtn.textContent = '+';
-                    scriptPanel.style.width = 'calc(75% - 1px)';
-                    biblePanel.style.width = '25%';
-                } else {
-                    toggleDramaturgBtn.textContent = '-';
-                    scriptPanel.style.width = '50%';
-                    biblePanel.style.width = '25%';
-                }
-            });
-        }
-
-        // Einfache Chat-Funktionalität
-        function enhanceChat() {
-            const chatInput = document.getElementById('chatInput');
-
-            // Einfacher Platzhalter
-            chatInput.placeholder = 'Frage an den Dramaturgen...';
-        }
-
-        // Upload-Funktion für Knowledge Base mit erweiterter Unterstützung
-        function setupUpload() {
-            const fileInput = document.getElementById('fileInput');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const uploadStatus = document.getElementById('uploadStatus');
-            const uploadProgress = document.getElementById('uploadProgress');
-            const progressFill = document.getElementById('progressFill');
-
-            // Upload Button klicken löst File Input aus
-            uploadBtn.addEventListener('click', () => {
-                fileInput.click();
-            });
-
-            // File Input ändert sich
-            fileInput.addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                // Unterstützte Dateiformate
-                const supportedFormats = ['.json', '.txt', '.doc', '.docx'];
-                const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-
-                if (!supportedFormats.includes(fileExtension)) {
-                    showUploadStatus(`Nur ${supportedFormats.join(', ')} Dateien sind erlaubt!`, 'error');
-                    return;
-                }
-
-                try {
-                    // Fortschrittsanzeige anzeigen
-                    uploadProgress.style.display = 'block';
-                    uploadStatus.style.display = 'none';
-                    updateProgress(10);
-
-                    let data;
-
-                    if (fileExtension === '.json') {
-                        // JSON-Datei direkt verarbeiten
-                        updateProgress(30);
-                        const text = await file.text();
-                        updateProgress(60);
-                        data = JSON.parse(text);
-                        updateProgress(80);
-
-                        // Datenvalidierung
-                        if (!validateImportData(data)) {
-                            showUploadStatus('Ungültiges JSON-Format!', 'error');
-                            uploadProgress.style.display = 'none';
-                            return;
-                        }
-                    } else {
-                        // Text- oder Word-Datei konvertieren
-                        updateProgress(20);
-                        const text = await readTextFile(file, fileExtension);
-                        updateProgress(50);
-                        data = await convertTextToStructure(text);
-                        updateProgress(80);
-                    }
-
-                    // Daten importieren
-                    await importData(data);
-                    updateProgress(100);
-
-                    showUploadStatus('Knowledge Base erfolgreich importiert!', 'success');
-                    addMessage('Knowledge Base wurde erfolgreich importiert und konvertiert.', false);
-
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    showUploadStatus(`Fehler beim Import: ${error.message}`, 'error');
-                } finally {
-                    // Fortschrittsanzeige ausblenden
-                    setTimeout(() => {
-                        uploadProgress.style.display = 'none';
-                        progressFill.style.width = '0%';
-                    }, 1000);
-                }
-            });
-        }
-
-        // Textdatei lesen (TXT, DOC, DOCX)
-        async function readTextFile(file, extension) {
-            if (extension === '.txt') {
-                return await file.text();
-            } else if (extension === '.doc' || extension === '.docx') {
-                // Für DOC/DOCX verwenden wir eine einfache Text-Extraktion
-                // In einer realen Anwendung würde man hier eine Bibliothek wie mammoth.js verwenden
-                return await file.text();
-            }
-        }
-
-        // Text in strukturierte Daten konvertieren
-        async function convertTextToStructure(text) {
-            const lines = text.split('\n').map(line => line.trim()).filter(line => line);
-            
-            const data = {
-                characterCards: [],
-                locations: '',
-                background: '',
-                script: ''
-            };
-
-            let currentSection = null;
-            let sectionContent = [];
-
-            lines.forEach(line => {
-                const lowerLine = line.toLowerCase();
-
-                // Sektionen erkennen
-                if (lowerLine.includes('charaktere') || lowerLine.includes('characters')) {
-                    if (currentSection && sectionContent.length > 0) {
-                        saveSection(currentSection, sectionContent.join('\n'), data);
-                    }
-                    currentSection = 'characters';
-                    sectionContent = [];
-                } else if (lowerLine.includes('drehorte') || lowerLine.includes('locations') || lowerLine.includes('orte')) {
-                    if (currentSection && sectionContent.length > 0) {
-                        saveSection(currentSection, sectionContent.join('\n'), data);
-                    }
-                    currentSection = 'locations';
-                    sectionContent = [];
-                } else if (lowerLine.includes('hintergrund') || lowerLine.includes('background') || lowerLine.includes('welt')) {
-                    if (currentSection && sectionContent.length > 0) {
-                        saveSection(currentSection, sectionContent.join('\n'), data);
-                    }
-                    currentSection = 'background';
-                    sectionContent = [];
-                } else if (lowerLine.includes('script') || lowerLine.includes('drehbuch') || lowerLine.includes('szene')) {
-                    if (currentSection && sectionContent.length > 0) {
-                        saveSection(currentSection, sectionContent.join('\n'), data);
-                    }
-                    currentSection = 'script';
-                    sectionContent = [];
-                } else {
-                    sectionContent.push(line);
-                }
-            });
-
-            // Letzte Sektion speichern
-            if (currentSection && sectionContent.length > 0) {
-                saveSection(currentSection, sectionContent.join('\n'), data);
-            }
-
-            return data;
-        }
-
-        // Sektion speichern
-        function saveSection(section, content, data) {
-            switch (section) {
-                case 'characters':
-                    // Charaktere aus Text extrahieren
-                    const characterBlocks = content.split(/\n\s*\n/);
-                    characterBlocks.forEach(block => {
-                        if (block.trim()) {
-                            const character = parseCharacterFromText(block);
-                            if (character.name) {
-                                data.characterCards.push(character);
+                        
+                        // Trigger proactive analysis for script changes
+                        if (id === 'script' && aiAgent) {
+                            // Clear existing timeout
+                            if (proactiveTimeout) {
+                                clearTimeout(proactiveTimeout);
                             }
+                            
+                            // Set new timeout for proactive analysis (debounced)
+                            proactiveTimeout = setTimeout(async () => {
+                                const scriptContent = element.value;
+                                if (scriptContent.length > 200) { // Only analyze if there's substantial content
+                                    try {
+                                        const task = 'Quick proactive analysis: Check for any obvious issues, continuity problems, or opportunities for improvement in this script excerpt.';
+                                        const context = {
+                                            script: scriptContent.substring(0, 1000),
+                                            type: 'proactive_quick',
+                                            timestamp: Date.now()
+                                        };
+                                        
+                                        const result = await aiAgent.executeTask(task, context);
+                                        
+                                        // Show as a subtle suggestion, not a full message
+                                        if (result && result.length > 50) {
+                                            const suggestion = result.substring(0, 200) + '...';
+                                            console.log('🤖 Proactive suggestion:', suggestion);
+                                            
+                                            // Optionally show in UI as a non-intrusive tooltip
+                                            showProactiveSuggestion(suggestion);
+                                        }
+                                    } catch (error) {
+                                        console.log('Proactive analysis failed:', error);
+                                    }
+                                }
+                            }, 5000); // Wait 5 seconds after user stops typing
                         }
                     });
-                    break;
-                case 'locations':
-                    data.locations = content;
-                    break;
-                case 'background':
-                    data.background = content;
-                    break;
-                case 'script':
-                    data.script = content;
-                    break;
+                }
+            });
+        }
+
+        // Show proactive suggestions in a non-intrusive way
+        function showProactiveSuggestion(suggestion) {
+            // Create or update suggestion element
+            let suggestionElement = document.getElementById('proactiveSuggestion');
+            if (!suggestionElement) {
+                suggestionElement = document.createElement('div');
+                suggestionElement.id = 'proactiveSuggestion';
+                suggestionElement.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #1a1a1a;
+                    border: 1px solid #8b9dc3;
+                    border-radius: 5px;
+                    padding: 10px;
+                    color: #e0e0e0;
+                    font-size: 12px;
+                    max-width: 300px;
+                    z-index: 1000;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `;
+                document.body.appendChild(suggestionElement);
+            }
+            
+            suggestionElement.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 5px;">
+                    <span style="color: #8b9dc3; font-weight: bold;">🤖 Proactive Suggestion</span>
+                    <button onclick="this.parentElement.parentElement.style.opacity='0'" style="background: none; border: none; color: #888; cursor: pointer;">×</button>
+                </div>
+                <div>${suggestion}</div>
+            `;
+            
+            // Show with fade-in
+            setTimeout(() => {
+                suggestionElement.style.opacity = '0.9';
+            }, 100);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (suggestionElement) {
+                    suggestionElement.style.opacity = '0';
+                }
+            }, 10000);
+        }
+
+// ========================================
+        // AGENTIC AI SYSTEM - COMPLETE REDESIGN
+        // ========================================
+
+        // Core Agentic Memory System
+        class AgentMemory {
+            constructor() {
+                this.shortTermMemory = [];
+                this.longTermMemory = {};
+                this.scriptMemory = {};
+                this.learningMemory = {};
+                this.contextCache = new Map();
+                this.maxShortTermSize = 50;
+            }
+
+            async initialize() {
+                // Load existing memory from storage
+                const stored = localStorage.getItem('agentMemory');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    Object.assign(this, data);
+                }
+            }
+
+            async store(type, content, metadata = {}) {
+                const entry = {
+                    type,
+                    content,
+                    metadata,
+                    timestamp: Date.now(),
+                    id: this._generateId()
+                };
+
+                if (type === 'interaction' || type === 'recent') {
+                    this.shortTermMemory.push(entry);
+                    if (this.shortTermMemory.length > this.maxShortTermSize) {
+                        this.shortTermMemory.shift();
+                    }
+                } else {
+                    if (!this.longTermMemory[type]) {
+                        this.longTermMemory[type] = [];
+                    }
+                    this.longTermMemory[type].push(entry);
+                }
+
+                await this._persist();
+                return entry.id;
+            }
+
+            async recall(query, type = null, limit = 5) {
+                let candidates = [];
+
+                if (type) {
+                    candidates = this.longTermMemory[type] || [];
+                } else {
+                    // Search all memory types
+                    Object.values(this.longTermMemory).forEach(arr => {
+                        candidates = candidates.concat(arr);
+                    });
+                    candidates = candidates.concat(this.shortTermMemory);
+                }
+
+                // Simple relevance scoring
+                const scored = candidates.map(entry => ({
+                    entry,
+                    score: this._calculateRelevance(query, entry)
+                })).filter(item => item.score > 0);
+
+                return scored
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, limit)
+                    .map(item => item.entry);
+            }
+
+            _calculateRelevance(query, entry) {
+                const queryLower = query.toLowerCase();
+                const contentLower = JSON.stringify(entry.content).toLowerCase();
+                
+                // Simple keyword matching
+                const queryWords = queryLower.split(/\s+/);
+                let score = 0;
+                
+                queryWords.forEach(word => {
+                    if (contentLower.includes(word)) {
+                        score += 1;
+                    }
+                });
+
+                // Time decay (recent memories are more relevant)
+                const age = Date.now() - entry.timestamp;
+                const ageFactor = Math.max(0, 1 - (age / (1000 * 60 * 60 * 24))); // Decay over 24 hours
+                score *= ageFactor;
+
+                return score;
+            }
+
+            _generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+
+            async _persist() {
+                const data = {
+                    shortTermMemory: this.shortTermMemory,
+                    longTermMemory: this.longTermMemory,
+                    scriptMemory: this.scriptMemory,
+                    learningMemory: this.learningMemory
+                };
+                localStorage.setItem('agentMemory', JSON.stringify(data));
             }
         }
 
-        // Charakter aus Text parsen
-        function parseCharacterFromText(text) {
-            const character = {
-                name: 'Unbekannter Charakter',
-                role: 'Charakter',
-                age: '',
-                appearance: '',
-                personality: '',
-                motivation: '',
-                background: '',
-                summary: ''
-            };
+        // Agentic Tool System
+        class AgenticTools {
+            constructor(agent) {
+                this.agent = agent;
+                this.tools = new Map();
+                this._initializeTools();
+            }
 
-            const lines = text.split('\n');
-            let firstLine = true;
+            _initializeTools() {
+                // Scene Analysis Tool
+                this.tools.set('sceneAnalyzer', {
+                    name: 'Scene Analyzer',
+                    description: 'Analyzes scenes for pacing, tension, and subtext',
+                    execute: async (params, context) => {
+                        const prompt = `Analyze this scene for pacing, tension arc, and subtext. Provide constructive directorial notes.\n\nScene: ${params.scene}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
 
-            lines.forEach(line => {
-                const lowerLine = line.toLowerCase();
+                // Dialogue Consistency Tool
+                this.tools.set('dialogueChecker', {
+                    name: 'Dialogue Consistency Checker',
+                    description: 'Checks dialogue consistency with character profiles',
+                    execute: async (params, context) => {
+                        const prompt = `Check if the dialogue is consistent with character personalities. Provide specific feedback for each character.\n\nDialogue: ${params.dialogue}\n\nCharacters: ${params.characters}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
 
-                if (firstLine) {
-                    character.name = line.trim();
-                    firstLine = false;
+                // Character Development Tool
+                this.tools.set('characterDeveloper', {
+                    name: 'Character Developer',
+                    description: 'Develops and enhances character profiles',
+                    execute: async (params, context) => {
+                        const prompt = `Develop this character profile with depth and nuance. Consider their role in the story.\n\nCharacter: ${params.character}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
+
+                // Plot Continuity Tool
+                this.tools.set('plotContinuity', {
+                    name: 'Plot Continuity Checker',
+                    description: 'Checks plot continuity and story consistency',
+                    execute: async (params, context) => {
+                        const prompt = `Analyze plot continuity and identify any inconsistencies or plot holes.\n\nScript: ${params.script}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
+
+                // Creative Suggestions Tool
+                this.tools.set('creativeSuggester', {
+                    name: 'Creative Suggester',
+                    description: 'Provides creative suggestions and ideas',
+                    execute: async (params, context) => {
+                        const prompt = `Provide creative suggestions to enhance this scene/character/plot element.\n\nContext: ${params.context}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
+
+                // Auto-Continue Tool
+                this.tools.set('autoContinue', {
+                    name: 'Auto-Continue Writer',
+                    description: 'Continues writing when stuck',
+                    execute: async (params, context) => {
+                        const prompt = `Continue this script in a natural, engaging way. Write 5-10 lines that maintain the current tone and character voices.\n\nCurrent script: ${params.currentScript}`;
+                        return await this.agent._callOllama(prompt, context);
+                    }
+                });
+            }
+
+            async execute(toolName, params, context) {
+                const tool = this.tools.get(toolName);
+                if (!tool) {
+                    throw new Error(`Tool '${toolName}' not found`);
                 }
 
-                // Versuche, Informationen aus der Zeile zu extrahieren
-                if (lowerLine.includes('alter:') || lowerLine.includes('age:')) {
-                    character.age = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('aussehen:') || lowerLine.includes('appearance:')) {
-                    character.appearance = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('persönlichkeit:') || lowerLine.includes('personality:')) {
-                    character.personality = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('motivation:')) {
-                    character.motivation = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('hintergrund:') || lowerLine.includes('background:')) {
-                    character.background = line.split(':')[1]?.trim() || '';
-                } else if (lowerLine.includes('rolle:') || lowerLine.includes('role:')) {
-                    character.role = line.split(':')[1]?.trim() || 'Charakter';
+                await this.agent.memory.store('tool_execution', {
+                    tool: toolName,
+                    params,
+                    timestamp: Date.now()
+                });
+
+                return await tool.execute(params, context);
+            }
+
+            getAvailableTools() {
+                return Array.from(this.tools.entries()).map(([key, tool]) => ({
+                    key,
+                    name: tool.name,
+                    description: tool.description
+                }));
+            }
+        }
+
+        // Main Agentic AI Agent
+        class AIAgent {
+            constructor() {
+                this.memory = new AgentMemory();
+                this.tools = new AgenticTools(this);
+                this.currentTask = null;
+                this.taskQueue = [];
+                this.isProcessing = false;
+                this.personality = 'collaborative'; // collaborative, analytical, creative
+                this.ollamaUrl = localStorage.getItem('ollamaUrl') || 'http://localhost:11434/api/generate';
+            }
+
+            async initialize() {
+                await this.memory.initialize();
+                console.log('🤖 Agentic AI System initialized');
+            }
+
+            // Main agentic task execution
+            async executeTask(taskDescription, context = {}) {
+                if (this.isProcessing) {
+                    this.taskQueue.push({ task: taskDescription, context });
+                    return 'Task queued. Agent is currently processing another request.';
+                }
+
+                this.isProcessing = true;
+                this.currentTask = taskDescription;
+
+                try {
+                    // Store the task
+                    await this.memory.store('task', {
+                        description: taskDescription,
+                        context,
+                        status: 'started'
+                    });
+
+                    // Create execution plan using AI
+                    const plan = await this._createExecutionPlan(taskDescription, context);
+                    
+                    // Execute the plan
+                    const result = await this._executePlan(plan, context);
+
+                    // Store the result
+                    await this.memory.store('task_result', {
+                        task: taskDescription,
+                        result,
+                        plan,
+                        status: 'completed'
+                    });
+
+                    return result;
+                } catch (error) {
+                    console.error('Agentic task execution failed:', error);
+                    await this.memory.store('task_error', {
+                        task: taskDescription,
+                        error: error.message,
+                        status: 'failed'
+                    });
+                    return `Task execution failed: ${error.message}`;
+                } finally {
+                    this.isProcessing = false;
+                    this.currentTask = null;
+                    
+                    // Process next task in queue
+                    if (this.taskQueue.length > 0) {
+                        const nextTask = this.taskQueue.shift();
+                        setTimeout(() => this.executeTask(nextTask.task, nextTask.context), 100);
+                    }
+                }
+            }
+
+            // Create execution plan using AI reasoning
+            async _createExecutionPlan(task, context) {
+                const availableTools = this.tools.getAvailableTools();
+                const toolsInfo = availableTools.map(t => `${t.key}: ${t.description}`).join('\n');
+
+                const planningPrompt = `You are an intelligent AI assistant for screenplay development. Create a step-by-step execution plan for this task: "${task}"
+
+Available tools:
+${toolsInfo}
+
+Context: ${JSON.stringify(context, null, 2)}
+
+Create a plan as a JSON array. Each step should have:
+- step: sequential number
+- action: tool name from available tools
+- parameters: object with required parameters
+- purpose: what this step accomplishes
+
+Example format:
+[{"step": 1, "action": "sceneAnalyzer", "parameters": {"scene": "scene text"}, "purpose": "analyze scene structure"}]`;
+
+                const planResponse = await this._callOllama(planningPrompt, '');
+                
+                try {
+                    // Parse the plan
+                    const plan = JSON.parse(planResponse);
+                    if (!Array.isArray(plan)) {
+                        throw new Error('Plan must be an array');
+                    }
+                    return plan;
+                } catch (error) {
+                    // Fallback to simple plan
+                    console.warn('Failed to parse AI plan, using fallback:', error);
+                    return await this._createFallbackPlan(task, context);
+                }
+            }
+
+            // Fallback plan creation
+            async _createFallbackPlan(task, context) {
+                const taskLower = task.toLowerCase();
+                
+                if (taskLower.includes('scene') || taskLower.includes('analyze')) {
+                    return [{
+                        step: 1,
+                        action: 'sceneAnalyzer',
+                        parameters: { scene: context.script || '' },
+                        purpose: 'Analyze the scene'
+                    }];
+                }
+                
+                if (taskLower.includes('dialog') || taskLower.includes('consistency')) {
+                    return [{
+                        step: 1,
+                        action: 'dialogueChecker',
+                        parameters: { 
+                            dialogue: context.script || '',
+                            characters: context.characters || ''
+                        },
+                        purpose: 'Check dialogue consistency'
+                    }];
+                }
+                
+                if (taskLower.includes('character')) {
+                    return [{
+                        step: 1,
+                        action: 'characterDeveloper',
+                        parameters: { character: context.character || '' },
+                        purpose: 'Develop character profile'
+                    }];
+                }
+                
+                if (taskLower.includes('continue') || taskLower.includes('stuck')) {
+                    return [{
+                        step: 1,
+                        action: 'autoContinue',
+                        parameters: { currentScript: context.script || '' },
+                        purpose: 'Continue the script'
+                    }];
+                }
+                
+                // Default to creative suggestions
+                return [{
+                    step: 1,
+                    action: 'creativeSuggester',
+                    parameters: { context: JSON.stringify(context) },
+                    purpose: 'Provide creative suggestions'
+                }];
+            }
+
+            // Execute the multi-step plan
+            async _executePlan(plan, context) {
+                let accumulatedContext = context;
+                let results = [];
+
+                for (const step of plan) {
+                    try {
+                        const stepResult = await this.tools.execute(
+                            step.action, 
+                            step.parameters, 
+                            accumulatedContext
+                        );
+                        
+                        results.push({
+                            step: step.step,
+                            action: step.action,
+                            purpose: step.purpose,
+                            result: stepResult
+                        });
+
+                        // Accumulate context for next steps
+                        accumulatedContext[`step_${step.step}_result`] = stepResult;
+
+                    } catch (error) {
+                        console.error(`Step ${step.step} failed:`, error);
+                        results.push({
+                            step: step.step,
+                            action: step.action,
+                            purpose: step.purpose,
+                            error: error.message
+                        });
+                    }
+                }
+
+                // Synthesize final result
+                return await this._synthesizeResults(results, plan, context);
+            }
+
+            // Synthesize results from multiple steps
+            async _synthesizeResults(results, plan, originalContext) {
+                const resultsText = results.map(r => 
+                    `Step ${r.step} (${r.action}): ${r.result || r.error}`
+                ).join('\n\n');
+
+                const synthesisPrompt = `You are an AI assistant for screenplay development. Synthesize these results into a comprehensive response.
+
+Original task: ${this.currentTask}
+Original context: ${JSON.stringify(originalContext, null, 2)}
+
+Execution results:
+${resultsText}
+
+Provide a clear, helpful response that addresses the original task. If there were errors, suggest alternatives.`;
+
+                return await this._callOllama(synthesisPrompt, '');
+            }
+
+            // Core Ollama API call (enhanced)
+            async _callOllama(prompt, context) {
+                try {
+                    const response = await fetch(this.ollamaUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'llama3.2',
+                            prompt: `${context}\n\n${prompt}`,
+                            stream: false
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data && data.response) {
+                        return data.response;
+                    } else if (data && data.text) {
+                        return data.text;
+                    } else if (data && typeof data === 'string') {
+                        return data;
+                    } else {
+                        console.error('Unexpected response format:', data);
+                        return 'Unerwartetes Antwortformat von Ollama';
+                    }
+                } catch (error) {
+                    console.error('Ollama API Error:', error);
+
+                    if (error.message.includes('CORS') || error.message.includes('Mixed Content')) {
+                        return `CORS-Fehler: Die Website (HTTPS) kann nicht auf lokales Ollama (HTTP) zugreifen.\n\nLösungen:\n1. Ollama mit CORS starten: OLLAMA_ORIGINS=https://sohaltweil.de ollama serve\n2. Ollama auf HTTPS-Server hosten\n3. Browser-Einstellungen anpassen (unsichere Inhalte erlauben)\n\nTechnischer Fehler: ${error.message}`;
+                    }
+
+                    return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass:\n- Ollama läuft (${this.ollamaUrl})\n- Das Modell 'llama3.2' verfügbar ist\n- CORS für diese Domain erlaubt ist`;
+                }
+            }
+
+            // Proactive analysis
+            async performProactiveAnalysis() {
+                const script = document.getElementById('script')?.value || '';
+                if (script.length < 100) return; // Not enough content
+
+                const task = 'Perform a quick proactive analysis of the current script to identify potential issues or opportunities for improvement';
+                const context = {
+                    script: script.substring(0, 1000), // Limit context size
+                    type: 'proactive',
+                    timestamp: Date.now()
+                };
+
+                return await this.executeTask(task, context);
+            }
+
+            // Get agent status
+            getStatus() {
+                return {
+                    isProcessing: this.isProcessing,
+                    currentTask: this.currentTask,
+                    queueLength: this.taskQueue.length,
+                    personality: this.personality,
+                    memorySize: Object.keys(this.memory.longTermMemory).length
+                };
+            }
+        }
+
+        // Agentic Status Panel Management
+        function setupAgenticStatusPanel() {
+            // Update status every 2 seconds
+            setInterval(updateAgenticStatus, 2000);
+
+            // Proactive analysis button
+            document.getElementById('agentProactiveBtn')?.addEventListener('click', async () => {
+                if (aiAgent) {
+                    addMessage('🤖 Starting proactive analysis...', true);
+                    const result = await aiAgent.performProactiveAnalysis();
+                    addMessage(result);
                 }
             });
 
-            // Zusammenfassung erstellen
-            const ageInfo = character.age ? `${character.age} Jahre alt` : 'Alter unbekannt';
-            const personalityInfo = character.personality ? character.personality : 'Persönlichkeit nicht beschrieben';
-            character.summary = `${character.name} ist ${ageInfo}. ${personalityInfo}`;
-
-            return character;
-        }
-
-        // Fortschrittsanzeige aktualisieren
-        function updateProgress(percent) {
-            const progressFill = document.getElementById('progressFill');
-            progressFill.style.width = `${percent}%`;
-        }
-
-        // Datenvalidierung für Import
-        function validateImportData(data) {
-            if (typeof data !== 'object' || data === null) {
-                return false;
-            }
-
-            // Prüfe, ob mindestens ein erwartetes Feld vorhanden ist
-            const validFields = ['characterCards', 'locations', 'background', 'script'];
-            return validFields.some(field => data.hasOwnProperty(field));
-        }
-
-        // Daten importieren
-        async function importData(data) {
-            // Charaktere importieren
-            if (Array.isArray(data.characterCards)) {
-                characters = data.characterCards;
-                await saveCharacters();
-                renderAllCharacters();
-            }
-
-            // Locations importieren
-            if (typeof data.locations === 'string') {
-                document.getElementById('locations').value = data.locations;
-                await saveData('locations', data.locations);
-            }
-
-            // Background importieren
-            if (typeof data.background === 'string') {
-                document.getElementById('background').value = data.background;
-                await saveData('background', data.background);
-            }
-
-            // Script importieren
-            if (typeof data.script === 'string') {
-                document.getElementById('script').value = data.script;
-                await saveData('script', data.script);
-            }
-        }
-
-        // Upload-Status anzeigen
-        function showUploadStatus(message, type) {
-            const uploadStatus = document.getElementById('uploadStatus');
-            uploadStatus.textContent = message;
-            uploadStatus.className = `upload-status ${type}`;
-            uploadStatus.style.display = 'block';
-
-            // Status nach 5 Sekunden ausblenden
-            setTimeout(() => {
-                uploadStatus.style.display = 'none';
-            }, 5000);
-        }
-
-        // RAG Services initialisieren
-        async function initializeRAG() {
-            try {
-                console.log('🚀 Initialisiere RAG Services...');
-                
-                // ChromaClient importieren (falls verfügbar)
-                let ChromaClient;
-                try {
-                    // Versuche, ChromaClient zu importieren
-                    const chromaModule = await import('https://unpkg.com/chromadb@1.0.0/dist/index.js');
-                    ChromaClient = chromaModule.ChromaClient;
-                } catch (importError) {
-                    console.warn('⚠️ ChromaClient nicht verfügbar, RAG wird deaktiviert');
-                    window.RAG = { ready: false };
-                    return;
+            // Clear memory button
+            document.getElementById('agentClearMemoryBtn')?.addEventListener('click', async () => {
+                if (aiAgent && confirm('Clear all agent memory? This cannot be undone.')) {
+                    localStorage.removeItem('agentMemory');
+                    await aiAgent.memory.initialize();
+                    addMessage('🤖 Agent memory cleared', false);
                 }
-                
-                // RAG Config
-                const RAG_CONFIG = {
-                    vectorStore: {
-                        type: 'chroma',
-                        path: './data/chroma',
-                        collection: 'script_documents_dev'
-                    },
-                    embeddings: {
-                        model: 'Xenova/all-MiniLM-L6-v2',
-                        dimension: 384,
-                        quantized: true,
-                        batchSize: 8
-                    },
-                    retrieval: {
-                        topK: 5,
-                        similarityThreshold: 0.7,
-                        maxContextLength: 3000
-                    }
-                };
-                
-                // Chroma DB initialisieren
-                const chromaClient = new ChromaClient({
-                    path: RAG_CONFIG.vectorStore.path
-                });
-                
-                window.RAG = {
-                    config: RAG_CONFIG,
-                    client: chromaClient,
-                    collection: null,
-                    ready: false
-                };
-                
-                // Collection erstellen oder laden
-                window.RAG.collection = await chromaClient.getOrCreateCollection({
-                    name: RAG_CONFIG.vectorStore.collection,
-                    metadata: {
-                        "hnsw:space": "cosine"
-                    }
-                });
-                
-                console.log('✅ RAG Services initialisiert');
-                window.RAG.ready = true;
-                
-                // Bestehende Charaktere indexieren
-                await indexExistingCharacters();
-                
-            } catch (error) {
-                console.warn('⚠️ RAG Initialisierung fehlgeschlagen:', error);
-                window.RAG = { ready: false };
-            }
+            });
         }
 
-        // Charakter in RAG indexieren
-        async function indexCharacter(characterData) {
-            if (!window.RAG?.ready) return;
-            
-            try {
-                console.log(`📝 Indexiere Charakter: ${characterData.name}`);
-                
-                // Charakter-Profil erstellen
-                const characterProfile = `
-Name: ${characterData.name}
-Alter: ${characterData.age || 'Unbekannt'}
-Rolle: ${characterData.role || 'Charakter'}
-Persönlichkeit: ${characterData.personality || 'Nicht beschrieben'}
-Motivation: ${characterData.motivation || 'Nicht beschrieben'}
-Hintergrund: ${characterData.background || 'Nicht beschrieben'}
-Aussehen: ${characterData.appearance || 'Nicht beschrieben'}
-Zusammenfassung: ${characterData.summary || ''}
-                `.trim();
-                
-                // Einfache ID generieren
-                const characterId = `character_${characterData.name.toLowerCase().replace(/\s+/g, '_')}`;
-                
-                // Zu Collection hinzufügen
-                await window.RAG.collection.add({
-                    ids: [characterId],
-                    documents: [characterProfile],
-                    metadatas: [{
-                        type: 'character',
-                        characterName: characterData.name,
-                        processedAt: new Date().toISOString()
-                    }]
-                });
-                
-                console.log(`✅ Charakter "${characterData.name}" indexiert`);
-            } catch (error) {
-                console.error(`❌ Fehler beim Indexieren von "${characterData.name}":`, error);
+        function updateAgenticStatus() {
+            if (!aiAgent) return;
+
+            const status = aiAgent.getStatus();
+            const statusElement = document.getElementById('agentStatus');
+            const taskElement = document.getElementById('agentCurrentTask');
+            const queueElement = document.getElementById('agentQueue');
+            const memoryElement = document.getElementById('agentMemory');
+
+            // Update status
+            if (status.isProcessing) {
+                statusElement.textContent = 'Processing';
+                statusElement.className = 'status-value processing';
+            } else {
+                statusElement.textContent = 'Ready';
+                statusElement.className = 'status-value ready';
             }
+
+            // Update current task
+            taskElement.textContent = status.currentTask || 'None';
+
+            // Update queue
+            queueElement.textContent = status.queueLength;
+
+            // Update memory
+            memoryElement.textContent = status.memorySize;
         }
 
-        // Bestehende Charaktere indexieren
-        async function indexExistingCharacters() {
-            if (!window.RAG?.ready) return;
-            
-            try {
-                const characters = await loadData('characterCards') || [];
-                for (const character of characters) {
-                    await indexCharacter(character);
-                }
-                console.log(`✅ ${characters.length} Charaktere indexiert`);
-            } catch (error) {
-                console.error('❌ Fehler beim Indexieren bestehender Charaktere:', error);
-            }
-        }
-
-        // RAG-basierte Charakter-Suche
-        async function searchCharacters(query, topK = 3) {
-            if (!window.RAG?.ready) {
-                console.warn('RAG nicht verfügbar, verwende Fallback-Suche');
-                return characters.filter(char => 
-                    char.name.toLowerCase().includes(query.toLowerCase()) ||
-                    char.summary.toLowerCase().includes(query.toLowerCase())
-                ).slice(0, topK);
-            }
-            
-            try {
-                const results = await window.RAG.collection.query({
-                    queryTexts: [query],
-                    nResults: topK,
-                    where: { type: 'character' }
-                });
-                
-                return results.documents[0].map((doc, index) => ({
-                    document: doc,
-                    metadata: results.metadatas[0][index],
-                    distance: results.distances[0][index]
-                }));
-            } catch (error) {
-                console.error('❌ Fehler bei RAG-Suche:', error);
-                return [];
-            }
-        }
-
-        // RAG-erweiterte Smart Actions
-        async function analyzeSceneWithRAG() {
-            const script = document.getElementById('script')?.value || '';
-            const query = 'Analysiere die aktuelle Szene auf Charakter-Konsistenz und Plot-Entwicklung';
-            
-            addMessage('Analysiere Szene mit RAG...', true);
-            
-            try {
-                // Relevante Charaktere suchen
-                const relevantCharacters = await searchCharacters(script.substring(0, 200), 3);
-                
-                // Kontext erstellen
-                let context = `SCRIPT:\n${script}\n\n`;
-                
-                if (relevantCharacters.length > 0) {
-                    context += 'RELEVANTE CHARAKTERE:\n';
-                    relevantCharacters.forEach((result, index) => {
-                        context += `[${index + 1}] ${result.document}\n\n`;
-                    });
-                }
-                
-                // Analyse mit Ollama
-                const prompt = 'Analysiere diese Szene auf Pacing, Spannungsbogen und Subtext. Gib konstruktive Hinweise für die Regie.';
-                const response = await callOllama(prompt, context);
-                
-                addMessage(response);
-            } catch (error) {
-                console.error('❌ Fehler bei RAG-Analyse:', error);
-                addMessage('Fehler bei der Analyse. Verwende Standard-Methode...', false);
-                // Fallback zur ursprünglichen Methode
-                document.getElementById('analyzeScene').click();
-            }
-        }
-
-        // Charakter-konsistente Dialog-Generierung mit RAG
-        async function generateCharacterConsistentDialog(characterName, situation) {
-            if (!window.RAG?.ready) {
-                addMessage('RAG nicht verfügbar. Verwende Standard-Dialog-Generierung.', false);
-                return;
-            }
-            
-            try {
-                addMessage(`Generiere charakter-konsistenten Dialog für ${characterName}...`, true);
-                
-                // Charakter-Profil suchen
-                const characterResults = await searchCharacters(characterName, 1);
-                
-                if (characterResults.length === 0) {
-                    addMessage(`Charakter "${characterName}" nicht in RAG gefunden.`, false);
-                    return;
-                }
-                
-                const characterProfile = characterResults[0].document;
-                
-                // Kontext erstellen
-                const context = `
-CHARAKTER-PROFIL:
-${characterProfile}
-
-SITUATION:
-${situation}
-
-Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
-- Sprechweise und Wortwahl
-- Persönlichkeit und Emotionen
-- Hintergrund und Motivation
-                `.trim();
-                
-                const prompt = `Schreibe einen Dialog für ${characterName} in dieser Situation.`;
-                const response = await callOllama(prompt, context);
-                
-                addMessage(response);
-            } catch (error) {
-                console.error('❌ Fehler bei Dialog-Generierung:', error);
-                addMessage('Fehler bei der Dialog-Generierung.', false);
-            }
-        }
-
-        // URL Eingabe beim Laden mit aktueller URL füllen
+        // Enhanced initialization with agentic system
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
@@ -1993,10 +1800,19 @@ Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
             setupManualToggle();
             enhanceChat();
             setupUpload();
-            
+            setupChatControls();
+
+            // Initialize the agentic system
+            aiAgent = new AIAgent();
+            await aiAgent.initialize();
+            console.log('🤖 Agentic AI System ready');
+
+            // Setup agentic status panel
+            setupAgenticStatusPanel();
+
             // Chat-Kontext laden
             await loadChatContext();
-            
+
             // RAG initialisieren (im Hintergrund, nicht blockierend)
             initializeRAG();
 
@@ -2006,6 +1822,13 @@ Generiere einen Dialog, der perfekt zum Charakter passt. Achte auf:
 
             // Memory Bank Status nach dem Laden überprüfen
             setTimeout(checkMemoryBank, 1000);
+
+            // Start proactive analysis after a delay
+            setTimeout(() => {
+                if (aiAgent) {
+                    aiAgent.performProactiveAnalysis();
+                }
+            }, 3000);
         });
     </script>
 </body>
