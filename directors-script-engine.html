@@ -1265,6 +1265,8 @@ FADE OUT."></textarea>
             <!-- Upload Section -->
             <input type="file" class="file-input" id="fileInput" accept=".json,.txt,.doc,.docx">
             <button class="upload-btn" id="uploadBtn">Knowledge Base importieren (.json, .txt, .doc, .docx)</button>
+            <input type="file" class="file-input" id="scriptInput" accept=".txt">
+            <button class="upload-btn" id="uploadScriptBtn">Script importieren (.txt)</button>
             <div class="upload-progress" id="uploadProgress">
                 <div>Konvertierung läuft...</div>
                 <div class="progress-bar">
@@ -2075,43 +2077,50 @@ Provide a clear, helpful response that addresses the original task. If there wer
 
             // Core Ollama API call (enhanced)
             async _callOllama(prompt, context) {
-                try {
-                    const response = await fetch(this.ollamaUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            model: 'llama3.2',
-                            prompt: `${context}\n\n${prompt}`,
-                            stream: false
-                        })
-                    });
+                // Use a robust, retry-capable Ollama call
+                const payloadBase = {
+                    model: 'llama3.2:latest',
+                    prompt: `${context}\n\n${prompt}`,
+                    stream: false
+                };
+                const maxAttempts = 3;
+                for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                    try {
+                        const response = await fetch(this.ollamaUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payloadBase)
+                        });
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        if (!response.ok) {
+                            const httpError = new Error(`HTTP error! status: ${response.status}`);
+                            if (attempt === maxAttempts) throw httpError;
+                            await new Promise(r => setTimeout(r, attempt * 200));
+                            continue;
+                        }
+
+                        const data = await response.json();
+
+                        if (data && data.response) {
+                            return data.response;
+                        } else if (data && data.text) {
+                            return data.text;
+                        } else if (data && typeof data === 'string') {
+                            return data;
+                        } else {
+                            console.error('Unexpected response format:', data);
+                            return 'Unerwartetes Antwortformat von Ollama';
+                        }
+                    } catch (error) {
+                        // Gentle backoff before retrying
+                        if (attempt === maxAttempts) {
+                            if (error && error.message && error.message.includes('CORS')) {
+                                return `CORS-Fehler: Die Website (HTTPS) kann nicht auf lokales Ollama (HTTP) zugreifen.\n\nLösungen:\n1. Ollama mit CORS starten: OLLAMA_ORIGINS=https://sohaltweil.de ollama serve\n2. Ollama auf HTTPS-Server hosten\n3. Browser-Einstellungen anpassen (unsichere Inhalte erlauben)\n\nTechnischer Fehler: ${error.message}`;
+                            }
+                            return `Fehler bei der Verbindung zu Ollama: ${error?.message ?? error}\n\nStellen Sie sicher, dass:\n- Ollama läuft (${this.ollamaUrl})\n- Das Modell 'llama3.2:latest' verfügbar ist\n- CORS für diese Domain erlaubt ist`;
+                        }
+                        await new Promise(r => setTimeout(r, attempt * 200));
                     }
-
-                    const data = await response.json();
-
-                    if (data && data.response) {
-                        return data.response;
-                    } else if (data && data.text) {
-                        return data.text;
-                    } else if (data && typeof data === 'string') {
-                        return data;
-                    } else {
-                        console.error('Unexpected response format:', data);
-                        return 'Unerwartetes Antwortformat von Ollama';
-                    }
-                } catch (error) {
-                    console.error('Ollama API Error:', error);
-
-                    if (error.message.includes('CORS') || error.message.includes('Mixed Content')) {
-                        return `CORS-Fehler: Die Website (HTTPS) kann nicht auf lokales Ollama (HTTP) zugreifen.\n\nLösungen:\n1. Ollama mit CORS starten: OLLAMA_ORIGINS=https://sohaltweil.de ollama serve\n2. Ollama auf HTTPS-Server hosten\n3. Browser-Einstellungen anpassen (unsichere Inhalte erlauben)\n\nTechnischer Fehler: ${error.message}`;
-                    }
-
-                    return `Fehler bei der Verbindung zu Ollama: ${error.message}\n\nStellen Sie sicher, dass:\n- Ollama läuft (${this.ollamaUrl})\n- Das Modell 'llama3.2' verfügbar ist\n- CORS für diese Domain erlaubt ist`;
                 }
             }
 
@@ -2331,13 +2340,11 @@ You can also just chat with me normally for AI assistance!`;
             }
         }
 
-// Clean initialization with minimal agentic system
+         // Clean initialization with minimal agentic system
         window.addEventListener('load', async () => {
             await initDB();
             await loadAllData();
             setupAutoSave();
-            enhanceChat();
-            setupChatControls();
 
             // Initialize agentic system
             aiAgent = new AIAgent();
@@ -2349,11 +2356,115 @@ You can also just chat with me normally for AI assistance!`;
             setupPanelToggles();
             setupInteractiveAgent();
 
-            // RAG initialisieren (im Hintergrund, nicht blockierend)
-            initializeRAG();
+            // Initialize RAG system
+            try {
+                const { RAG_CONFIG } = await import('./rag/config/development.js');
+                const { VectorStoreService } = await import('./rag/services/VectorStoreService.js');
+                const { EmbeddingService } = await import('./rag/services/EmbeddingService.js');
+                const { DocumentProcessor } = await import('./rag/services/DocumentProcessor.js');
+                const { ScriptRAGService } = await import('./rag/services/ScriptRAGService.js');
+
+                // Initialize RAG components
+                const vectorStore = new VectorStoreService(RAG_CONFIG);
+                await vectorStore.initialize();
+
+                const embeddingService = new EmbeddingService(RAG_CONFIG);
+                await embeddingService.initialize();
+
+                const documentProcessor = new DocumentProcessor(RAG_CONFIG);
+                await documentProcessor.initialize();
+
+                window.RAG = {
+                    vectorStore,
+                    embeddingService,
+                    documentProcessor,
+                    ragService: new ScriptRAGService(vectorStore, embeddingService, {
+                        generate: async (prompt) => {
+                            return await aiAgent._callOllama(prompt.user, prompt.system || '');
+                        }
+                    })
+                };
+
+                console.log('✅ RAG System initialized');
+            } catch (error) {
+                console.error('❌ RAG initialization failed:', error);
+            }
+
+            // Setup script upload functionality
+            setupScriptUpload();
 
             console.log('🎬 Director\'s Script Engine (Clean 3-Column Interface) ready');
         });
+
+        // Function to handle script upload
+        function setupScriptUpload() {
+            const scriptInput = document.getElementById('scriptInput');
+            const uploadScriptBtn = document.getElementById('uploadScriptBtn');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const progressFill = document.getElementById('progressFill');
+
+            if (uploadScriptBtn) {
+                uploadScriptBtn.addEventListener('click', () => {
+                    scriptInput.click();
+                });
+            }
+
+            if (scriptInput) {
+                scriptInput.addEventListener('change', async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    uploadProgress.style.display = 'block';
+                    uploadStatus.style.display = 'none';
+                    progressFill.style.width = '0%';
+
+                    try {
+                        const content = await readFileAsText(file);
+                        
+                        // Process the script with RAG
+                        if (window.RAG && window.RAG.ragService) {
+                            const scriptId = `script_${Date.now()}`;
+                            await window.RAG.ragService.addScriptToKnowledgeBase(scriptId, content);
+                            
+                            // Update the script editor
+                            const scriptElement = document.getElementById('script');
+                            if (scriptElement) {
+                                scriptElement.value = content;
+                                await saveData('script', content);
+                            }
+                            
+                            uploadStatus.textContent = '✅ Script imported and processed successfully!';
+                            uploadStatus.className = 'upload-status success';
+                        } else {
+                            uploadStatus.textContent = '⚠️ RAG system not available. Script loaded but not processed.';
+                            uploadStatus.className = 'upload-status error';
+                        }
+                    } catch (error) {
+                        console.error('❌ Script upload failed:', error);
+                        uploadStatus.textContent = `❌ Error: ${error.message}`;
+                        uploadStatus.className = 'upload-status error';
+                    } finally {
+                        uploadStatus.style.display = 'block';
+                        progressFill.style.width = '100%';
+                        
+                        setTimeout(() => {
+                            uploadProgress.style.display = 'none';
+                        }, 2000);
+                    }
+                });
+            }
+        }
+
+        // Helper function to read file as text
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
     </script>
 </body>
 </html>
