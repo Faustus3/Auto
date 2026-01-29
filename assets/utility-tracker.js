@@ -1,5 +1,6 @@
 (function(){
-  const XRPL_RPC_URL = window.XRPL_RPC_URL || "http://localhost:51234"; // XRPL JSON-RPC endpoint
+  const XRPL_RPC_URL = window.XRPL_RPC_URL || "https://s1.ripple.com:51234"; // Public XRPL JSON-RPC endpoint
+  const STELLAR_HORIZON_URL = "https://horizon.stellar.org";
 
   function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
   async function postJson(url, payload){
@@ -54,27 +55,52 @@
       return data?.market_data?.total_volume?.usd ?? null;
     } catch(_){ return null; }
   }
+  async function fetchStellarTPS(){
+    try {
+      const res = await fetch(`${STELLAR_HORIZON_URL}/fee_stats`);
+      const data = await res.json();
+      // Horizon doesn't directly give TPS in fee_stats, but we can estimate or use ledger data.
+      // For simplicity and reliability in this tracker, we'll focus on fees and volume for XLM, 
+      // or fetch the latest ledger.
+      return null; 
+    } catch(_) { return null; }
+  }
+
+  async function fetchStellarFees(){
+    try {
+      const res = await fetch(`${STELLAR_HORIZON_URL}/fee_stats`);
+      const data = await res.json();
+      const avgFeeXlm = data?.fee_charged?.p50 ? data.fee_charged.p50 / 10000000 : 0;
+      return { feeXlm: avgFeeXlm };
+    } catch(_) { return { feeXlm: 0 }; }
+  }
+
   async function updateTracker(){
+    if (document.getElementById('utility-tracker').style.display === 'none') return;
+
     const xrpTPS = await estimateTPS();
     const xrpFees = await fetchFees();
     const xrpVolume = await fetchVolume('ripple');
 
-    const xlmTPS = await estimateTPS();
-    const xlmFees = await fetchFees();
+    const xlmFees = await fetchStellarFees();
     const xlmVolume = await fetchVolume('stellar');
 
     document.getElementById('xrp-tps').textContent = (xrpTPS != null) ? xrpTPS.toFixed(2) : 'n/a';
     document.getElementById('xrp-fee').textContent = (typeof xrpFees.feeXrp === 'number') ? xrpFees.feeXrp.toFixed(6) : 'n/a';
     document.getElementById('xrp-volume').textContent = (xrpVolume != null) ? `$${Number(xrpVolume).toLocaleString()}` : 'n/a';
 
-    document.getElementById('xlm-tps').textContent = (xlmTPS != null) ? xlmTPS.toFixed(2) : 'n/a';
-    document.getElementById('xlm-fee').textContent = (typeof xlmFees.feeXrp === 'number') ? xlmFees.feeXrp.toFixed(6) : 'n/a';
+    document.getElementById('xlm-tps').textContent = 'n/a';
+    document.getElementById('xlm-fee').textContent = (typeof xlmFees.feeXlm === 'number') ? xlmFees.feeXlm.toFixed(6) : 'n/a';
     document.getElementById('xlm-volume').textContent = (xlmVolume != null) ? `$${Number(xlmVolume).toLocaleString()}` : 'n/a';
   }
   window.addEventListener('load', () => {
     if (!document.getElementById('utility-tracker')) return;
-    updateTracker();
-    setInterval(updateTracker, 60000);
+    // Don't auto-start on load if it's hidden behind login
+    setInterval(() => {
+        if (document.getElementById('utility-tracker').style.display !== 'none') {
+            updateTracker();
+        }
+    }, 60000);
   });
   window.UtilityTracker = { updateTracker };
 })();

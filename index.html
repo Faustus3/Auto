@@ -92,28 +92,31 @@
             </div>
             
             <button id="logoutButton">Abmelden</button>
+
+            <!-- Utility Tracker Section -->
+            <section id="utility-tracker" class="utility-tracker-section" style="display: none;">
+                <h2>Utility Tracker</h2>
+                <div class="utility-tracker-grid">
+                    <div class="tracker-card">
+                        <h3>XRP (Ripple)</h3>
+                        <div class="tracker-data">
+                            <div>TPS: <span class="tracker-value" id="xrp-tps">-</span></div>
+                            <div>Avg Fee (XRP): <span class="tracker-value" id="xrp-fee">-</span></div>
+                            <div>24h Vol (USD): <span class="tracker-value" id="xrp-volume">-</span></div>
+                        </div>
+                    </div>
+                    <div class="tracker-card">
+                        <h3>XLM (Stellar)</h3>
+                        <div class="tracker-data">
+                            <div>TPS: <span class="tracker-value" id="xlm-tps">-</span></div>
+                            <div>Avg Fee (XLM): <span class="tracker-value" id="xlm-fee">-</span></div>
+                            <div>24h Vol (USD): <span class="tracker-value" id="xlm-volume">-</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
-    <!-- Utility Tracker Section -->
-    <section id="utility-tracker" style="padding:12px; margin:16px 0; background:#111; color:#fff; border-radius:10px;">
-      <div style="max-width:960px; margin:0 auto;">
-        <h2 style="margin:0 0 8px 0;">Utility Tracker</h2>
-        <div style="display:flex; gap:16px; flex-wrap:wrap;">
-          <div style="flex:1 1 260px; padding:12px; background:#1e1e1e; border-radius:8px;">
-            <h3 style="margin:0 0 8px 0;">XRP</h3>
-            <div>TPS: <strong id="xrp-tps">-</strong></div>
-            <div>Avg Fee (XRP): <strong id="xrp-fee">-</strong></div>
-            <div>24h Volume (USD): <strong id="xrp-volume">-</strong></div>
-          </div>
-          <div style="flex:1 1 260px; padding:12px; background:#1e1e1e; border-radius:8px;">
-            <h3 style="margin:0 0 8px 0;">XLM</h3>
-            <div>TPS: <strong id="xlm-tps">-</strong></div>
-            <div>Avg Fee (XLM): <strong id="xlm-fee">-</strong></div>
-            <div>24h Volume (USD): <strong id="xlm-volume">-</strong></div>
-          </div>
-        </div>
-      </div>
-    </section>
     <script src="assets/utility-tracker.js"></script>
     <script src="script.js"></script>
 </body>

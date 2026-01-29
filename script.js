@@ -9,13 +9,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const addNoteBtn = document.querySelector('.add-note-btn');
     const notesContainer = document.querySelector('.notes-container');
     const glCanvas = document.getElementById('glcanvas');
-    
+
     // Notizen aus localStorage laden
     let notes = JSON.parse(localStorage.getItem('finn-notes')) || [];
-    
+
     // Blog-Artikel aus localStorage laden
     let blogPosts = JSON.parse(localStorage.getItem('finn-blog-posts')) || [];
     let currentUser = '';
+    let currentToken = '';
 
     // --- GLSL Background Animation ---
     const gl = glCanvas.getContext('webgl');
@@ -176,25 +177,59 @@ document.addEventListener('DOMContentLoaded', () => {
     animate();
 
     // --- Login Functionality ---
-    loginForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+    // Automatisches Ausfüllen für Debugging (optional, aber hilfreich)
+    // document.getElementById('username').value = 'Finn';
+    // document.getElementById('password').value = 'test';
 
-        // Einfache Frontend-Validierung (für Demonstrationszwecke)
-        if ((username === 'Finn' || username === 'Dani') && password === 'test') {
-            currentUser = username;
-            loginMessage.textContent = 'Anmeldung erfolgreich!';
-            loginMessage.className = 'message success';
-            welcomeSection.style.display = 'none';
-            loginSection.style.display = 'none';
-            websiteLinkSection.style.display = 'none';
-            privateFilesSection.style.display = 'block';
-            
-            // Blog-Artikel anzeigen
-            renderBlogPosts();
-        } else {
-            loginMessage.textContent = 'Ungültiger Benutzername oder Passwort.';
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const username = usernameInput ? usernameInput.value : '';
+        const password = passwordInput ? passwordInput.value : '';
+
+        try {
+            // Send login request to backend
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                currentUser = username;
+                currentToken = data.token;
+                loginMessage.textContent = 'Anmeldung erfolgreich!';
+                loginMessage.className = 'message success';
+                welcomeSection.style.display = 'none';
+                loginSection.style.display = 'none';
+                websiteLinkSection.style.display = 'none';
+                privateFilesSection.style.display = 'block';
+
+                const utilityTracker = document.getElementById('utility-tracker');
+                if (utilityTracker) {
+                    utilityTracker.style.display = 'block';
+                    if (window.UtilityTracker && typeof window.UtilityTracker.updateTracker === 'function') {
+                        window.UtilityTracker.updateTracker();
+                    }
+                }
+
+                // Load user data from backend
+                await loadUserData();
+
+                // Blog-Artikel anzeigen
+                renderBlogPosts();
+            } else {
+                loginMessage.textContent = data.error || 'Ungültiger Benutzername oder Passwort.';
+                loginMessage.className = 'message error';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            loginMessage.textContent = 'Fehler bei der Anmeldung. Bitte versuchen Sie es später erneut.';
             loginMessage.className = 'message error';
         }
     });
@@ -237,20 +272,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function updateNoteTitle(index, newTitle) {
+    async function updateNoteTitle(index, newTitle) {
         notes[index].title = newTitle;
         localStorage.setItem('finn-notes', JSON.stringify(notes));
+        await saveNoteToBackend(notes[index], index);
     }
-    
-    function updateNoteContent(index, newContent) {
+
+    async function updateNoteContent(index, newContent) {
         notes[index].content = newContent;
         localStorage.setItem('finn-notes', JSON.stringify(notes));
+        await saveNoteToBackend(notes[index], index);
     }
-    
-    function deleteNote(index) {
+
+    async function deleteNote(index) {
         if (confirm('Notiz wirklich löschen?')) {
             notes.splice(index, 1);
             localStorage.setItem('finn-notes', JSON.stringify(notes));
+            // In a real app, you would also delete from backend
             renderNotes();
         }
     }
@@ -261,15 +299,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Notizen beim Laden anzeigen
     renderNotes();
 
-    logoutButton.addEventListener('click', () => {
-        loginMessage.textContent = '';
-        loginMessage.className = 'message';
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        welcomeSection.style.display = 'block';
-        loginSection.style.display = 'block';
-        websiteLinkSection.style.display = 'block';
-        privateFilesSection.style.display = 'none';
+    logoutButton.addEventListener('click', async () => {
+        try {
+            // Send logout request to backend (if needed)
+            // For JWT tokens, we just clear the local token
+            currentToken = '';
+            currentUser = '';
+
+            loginMessage.textContent = '';
+            loginMessage.className = 'message';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            welcomeSection.style.display = 'block';
+            loginSection.style.display = 'block';
+            websiteLinkSection.style.display = 'block';
+            privateFilesSection.style.display = 'none';
+
+            const utilityTracker = document.getElementById('utility-tracker');
+            if (utilityTracker) {
+                utilityTracker.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
     });
     
     // --- Blog Functionality ---
@@ -283,12 +335,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const blogContentInput = document.getElementById('blogContent');
     const blogTagsInput = document.getElementById('blogTags');
     const blogSearchInput = document.getElementById('blogSearch');
-    
+
     let isEditingBlog = false;
     let editingBlogId = null;
     let showAllPosts = false;
     let searchQuery = '';
-    
+
+    // Load user data from backend
+    async function loadUserData() {
+        try {
+            const response = await fetch('/api/data/keys', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Load notes and blog posts from backend if they exist
+                // This would be implemented based on your data structure
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+        }
+    }
+
+    // Save note to backend
+    async function saveNoteToBackend(note, index) {
+        try {
+            const response = await fetch('/api/data/save', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    key: `note_${index}`,
+                    data: note
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save note');
+            }
+        } catch (error) {
+            console.error('Error saving note:', error);
+        }
+    }
+
+    // Save blog post to backend
+    async function saveBlogPostToBackend(post) {
+        try {
+            const response = await fetch('/api/data/save', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    key: `blog_${post.id}`,
+                    data: post
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save blog post');
+            }
+        } catch (error) {
+            console.error('Error saving blog post:', error);
+        }
+    }
+
     // Blog-Editor anzeigen
     addBlogBtn.addEventListener('click', () => {
         blogEditor.style.display = 'block';
@@ -312,18 +431,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Blog-Artikel speichern
-    saveBlogBtn.addEventListener('click', () => {
+    saveBlogBtn.addEventListener('click', async () => {
         const title = blogTitleInput.value.trim();
         const content = blogContentInput.value.trim();
         const tags = blogTagsInput.value.trim();
-        
+
         if (!title || !content) {
             alert('Titel und Inhalt sind erforderlich!');
             return;
         }
-        
+
         const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-        
+
         if (isEditingBlog && editingBlogId !== null) {
             // Artikel bearbeiten
             blogPosts[editingBlogId] = {
@@ -346,10 +465,19 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             blogPosts.unshift(newPost);
         }
-        
+
+        // Save to localStorage (for demo purposes)
         localStorage.setItem('finn-blog-posts', JSON.stringify(blogPosts));
+
+        // Save to backend
+        if (isEditingBlog && editingBlogId !== null) {
+            await saveBlogPostToBackend(blogPosts[editingBlogId]);
+        } else {
+            await saveBlogPostToBackend(blogPosts[0]);
+        }
+
         renderBlogPosts();
-        
+
         blogEditor.style.display = 'none';
         addBlogBtn.style.display = 'inline-block';
         blogTitleInput.value = '';
@@ -465,4 +593,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateNoteTitle = updateNoteTitle;
     window.updateNoteContent = updateNoteContent;
     window.deleteNote = deleteNote;
+
 });
