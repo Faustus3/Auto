@@ -1,27 +1,33 @@
 {
-  "name": "auto",
+  "name": "auto-dashboard",
   "version": "1.0.0",
-  "description": "Dieses Repository enthält das Frontend für die Instagram-Automatisierungslösung.",
-  "main": "script.js",
+  "description": "A personal dashboard with authentication, blog, notes, and AI integration",
+  "main": "backend/server.js",
   "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Faustus3/Auto.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Faustus3/Auto/issues"
-  },
-  "homepage": "https://github.com/Faustus3/Auto#readme",
+  "keywords": [
+    "dashboard",
+    "auth",
+    "blog",
+    "notes",
+    "ai",
+    "ollama"
+  ],
+  "author": "Finn",
+  "license": "MIT",
   "dependencies": {
-    "@xenova/transformers": "^2.17.2",
-    "chromadb": "^3.2.0",
-    "mammoth": "^1.11.0",
-    "pdf-parse": "^2.4.5",
-    "uuid": "^13.0.0"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^6.7.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }

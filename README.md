@@ -1,146 +1,88 @@
-# Director's Script Engine
+# Auto Dashboard
 
-Eine umfassende Drehbuch-Entwicklungsumgebung mit KI-gestützter Unterstützung und RAG-Integration.
+A personal dashboard application with authentication, blog, notes, and AI integration using Ollama.
 
 ## Features
 
-### 🎬 Script Editor
-- Professioneller Drehbuch-Editor mit Standard-Formatierung
-- Auto-Save für kontinuierliche Datensicherung
-- Export-Funktion für fertige Arbeiten
-
-### 👥 Character Bible
-- Dynamische Charakter-Karten mit detaillierten Profilen
-- Charakter-Erstellung via KI-Assistent
-- Semantische Charakter-Suche mit RAG
-- Charakter-konsistente Dialog-Generierung
-
-### 🧠 KI-Assistent (Dramaturg)
-- Ollama-Integration für lokale KI-Modelle
-- Szene-Analyse mit Pacing- und Spannungsbogen-Check
-- Dialog-Konsistenz-Prüfung
-- Auto-Continue für Schreibblockaden
-- Konfigurierbare Ollama-URL für Flexibilität
-
-### 🔍 RAG-Integration (Retrieval-Augmented Generation)
-- **Charakter-basierte RAG**: Dialog-Generierung basierend auf Charakter-Profilen
-- **Semantische Suche**: Findet relevante Charaktere basierend auf Kontext
-- **Erweiterte Analysen**: Szenen-Analyse mit Charakter-Kontext
-- **Chroma DB**: Lokale Vektordatenbank für schnelle semantische Suche
-
-### 📚 Knowledge Base
-- Upload-Funktion für Referenz-Materialien
-- Unterstützung für JSON, TXT, DOC, DOCX
-- Automatische Konvertierung in strukturierte Daten
-- Import von Charakteren, Orten und Hintergründen
+- User authentication (login/register)
+- Personal blog with CRUD operations
+- Notes section for ideas and thoughts
+- Integration with Ollama AI for text generation
+- Utility tracker for cryptocurrency data
+- Responsive design with cyberpunk aesthetic
 
 ## Installation
 
-### Voraussetzungen
-- Node.js 18+
-- Ollama (für KI-Funktionen)
-- Chroma DB (für RAG-Features)
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables in `.env` file (see `.env.example`)
+4. Start the server:
+   ```bash
+   npm start
+   ```
+   or for development with auto-restart:
+   ```bash
+   npm run dev
+   ```
 
-### Setup
+## Project Structure
 
-1. **Abhängigkeiten installieren**:
-```bash
-npm install chromadb @xenova/transformers pdf-parse mammoth uuid
+```
+.
+├── backend/
+│   ├── server.js          # Main server file
+│   ├── auth-service.js    # Authentication service
+│   ├── ollama-service.js  # Ollama API service
+│   ├── data-service.js    # Data persistence service
+│   └── ...
+├── data/
+│   └── users.json         # User data storage
+├── assets/
+│   └── utility-tracker.js # Utility tracker functionality
+├── index.html             # Main HTML file
+├── script.js              # Client-side JavaScript
+└── style.css              # CSS styling
 ```
 
-2. **Chroma DB einrichten**:
-```bash
-mkdir -p ./data/chroma
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/verify` - Verify JWT token
+
+### Ollama
+- `POST /api/ollama/generate` - Generate text using Ollama
+- `GET /api/ollama/status` - Check Ollama service status
+
+### Data
+- `POST /api/data/save` - Save user data
+- `GET /api/data/load/:key` - Load user data
+- `GET /api/data/keys` - List user data keys
+
+## Environment Variables
+
+Create a `.env` file with the following variables:
+
+```
+PORT=3000
+OLLAMA_URL=http://localhost:11434
+JWT_SECRET=your-secret-key-here
+ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000
 ```
 
-3. **Ollama starten**:
-```bash
-ollama serve
-ollama pull llama3.2
-```
+## Development
 
-4. **App starten**:
-Öffnen Sie `directors-script-engine.html` in einem modernen Browser.
+This project uses:
+- Node.js with Express.js
+- JWT for authentication
+- bcrypt for password hashing
+- Ollama for AI text generation
+- Local storage for demo purposes
 
-## Verwendung
+## License
 
-### Grundlagen
-1. **Charaktere erstellen**: Klicken Sie auf "Neuer Charakter" in der linken Spalte
-2. **Skript schreiben**: Nutzen Sie den mittleren Bereich für Ihr Drehbuch
-3. **KI-Assistent nutzen**: Verwenden Sie die rechte Spalte für Analysen und Vorschläge
-
-### KI-Funktionen
-- **Szene analysieren**: Lässt die KI die aktuelle Szene auf Pacing und Spannungsbogen prüfen
-- **Dialog-Check**: Überprüft die Konsistenz der Dialoge mit den Charakter-Profilen
-- **Weiterschreiben**: Generiert die nächsten 5-10 Zeilen basierend auf dem aktuellen Kontext
-
-### RAG-Features
-Die RAG-Integration wird automatisch beim Laden der Seite initialisiert:
-- Charaktere werden automatisch in der Vektordatenbank indexiert
-- Semantische Suche findet relevante Charaktere basierend auf Kontext
-- Dialog-Generierung berücksichtigt Charakter-Profile für Konsistenz
-
-### Daten-Management
-- **Auto-Save**: Alle Änderungen werden automatisch gespeichert
-- **Export**: Speichern Sie Ihre Arbeit als JSON-Datei
-- **Import**: Laden Sie zuvor exportierte Arbeiten oder Knowledge Base-Dateien
-
-## Konfiguration
-
-### Ollama URL
-Standardmäßig verwendet die App `http://localhost:11434/api/generate`. Sie können die URL im Eingabefeld oben rechts ändern.
-
-### CORS-Einstellungen
-Falls Sie die App über HTTPS hosten, müssen Sie Ollama mit CORS-Unterstützung starten:
-```bash
-OLLAMA_ORIGINS=https://ihredomain.de ollama serve
-```
-
-## Dokumentation
-
-### RAG-Implementierung
-- `rag-research.md`: Umfassende Research zu RAG-Technologien
-- `rag-implementation-plan.md`: Detaillierter 8-Wochen-Plan für RAG-Integration
-- `tech-stack-evaluation.md`: Technologie-Auswahl und Bewertung
-- `phase2-setup-guide.md`: Praktischer Setup-Guide für RAG-Implementierung
-
-### Architektur
-- **Frontend**: Reines HTML/CSS/JavaScript (Vanilla JS)
-- **Datenpersistenz**: IndexedDB für lokale Speicherung
-- **KI-Integration**: Ollama API für lokale Sprachmodelle
-- **Vektordatenbank**: Chroma DB für semantische Suche
-
-## Entwicklung
-
-### Projektstruktur
-```
-directors-script-engine.html    # Hauptanwendung
-rag/
-├── services/                   # RAG Services
-├── config/                     # Konfiguration
-├── utils/                      # Hilfsfunktionen
-└── tests/                      # Tests
-data/
-└── chroma/                     # Chroma DB Speicher
-```
-
-### Nächste Schritte
-1. **Phase 3**: Vollständige Charakter-basierte RAG
-2. **Phase 4**: Plot- und Szenen-RAG
-3. **Phase 5**: Referenz-Material-RAG
-4. **Phase 6**: UI-Integration und Optimierung
-
-## Lizenz
-
-Dieses Projekt steht unter der MIT Lizenz.
-
-## Support
-
-Bei Fragen oder Problemen:
-1. Stellen Sie sicher, dass Ollama läuft
-2. Überprüfen Sie die Browser-Konsole auf Fehler
-3. Prüfen Sie die CORS-Einstellungen für HTTPS
-
----
-
-**Hinweis**: Diese App ist für die lokale Entwicklung konzipiert. Für Produktions-Einsatz empfehlen wir die Verwendung von Cloud-basierten Vektordatenbanken (z.B. Pinecone) und OpenAI Embeddings.
+MIT
