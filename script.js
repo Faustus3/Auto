@@ -198,6 +198,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password })
             });
 
+            // Check if response is ok before trying to parse JSON
+            if (!response.ok) {
+                // Try to get error message from response
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (jsonError) {
+                    // If JSON parsing fails, get text content
+                    const text = await response.text();
+                    console.error('Error response (text):', text);
+                    loginMessage.textContent = 'Fehler bei der Anmeldung. Server meldet: ' + text;
+                    loginMessage.className = 'message error';
+                    return;
+                }
+                loginMessage.textContent = errorData.error || 'Ungültiger Benutzername oder Passwort.';
+                loginMessage.className = 'message error';
+                return;
+            }
+
             const data = await response.json();
 
             if (response.ok) {
@@ -223,9 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Blog-Artikel anzeigen
                 renderBlogPosts();
-            } else {
-                loginMessage.textContent = data.error || 'Ungültiger Benutzername oder Passwort.';
-                loginMessage.className = 'message error';
             }
         } catch (error) {
             console.error('Login error:', error);
