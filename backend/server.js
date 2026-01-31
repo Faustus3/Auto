@@ -27,16 +27,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
 // CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS ?
-  process.env.ALLOWED_ORIGINS.split(',') :
-  ['http://localhost:8080'];
-
-const corsOptions = {
-  origin: allowedOrigins,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
+// For development, allow all origins to prevent CORS errors
+// In production, you should restrict this to specific origins
+app.use(cors());
 
 // Rate limiting
 const limiter = rateLimit({

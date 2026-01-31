@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add frontend.js)",
+      "Bash(git commit -m \"Add frontend.js with WebGL animation, authentication, notes, and blog functionality\")",
+      "Bash(git push origin main)",
+      "Bash(git commit -m \"Add frontend.js with WebGL animation, authentication, notes, and blog functionality\n\nThis commit adds the frontend.js file which contains:\n- WebGL background animation with pattern effects and vignette\n- Authentication system with login/logout functionality\n- Note-taking system with localStorage persistence\n- Blog system with search and tagging\n- Complete application initialization and event handling\n\nThe frontend.js file implements a personal dashboard with authentication, note-taking, and blogging capabilities, using localStorage for data persistence and making API calls to a backend server at http://localhost:3000/api.\")",
+      "Bash(git add .)"
+    ]
+  }
+}
