@@ -1,5 +1,6 @@
 (function(){
-  const XRPL_RPC_URL = window.XRPL_RPC_URL || "https://s1.ripple.com:51234"; // Public XRPL JSON-RPC endpoint
+  // Tausche s1.ripple.com gegen xrplcluster.com aus (oft toleranter bei CORS)
+  const XRPL_RPC_URL = "https://xrplcluster.com";
   const STELLAR_HORIZON_URL = "https://horizon.stellar.org";
 
   function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }

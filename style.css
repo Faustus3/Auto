@@ -105,7 +105,8 @@ canvas {
 }
 
 .container {
-    background-color: rgba(220, 220, 220, 0.95);
+    background-color: rgba(220, 220, 220, 0.05);
+    backdrop-filter: blur(15px);
     padding: var(--fib-spacing-3);
     border-radius: 0.3rem;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -124,7 +125,7 @@ canvas {
 }
 
 h1 {
-    color: #2c3e50;
+    color: #3c98f3;
     margin-bottom: var(--fib-spacing-2);
     font-size: 2.2rem;
     font-weight: normal;
@@ -139,7 +140,7 @@ h1 {
 /* Keine gradientText Animation mehr */
 
 h2 {
-    color: #34495e;
+    color: #8f4ee4;
     margin-bottom: var(--fib-spacing-2);
     font-size: 1.618rem;
     position: relative;
@@ -159,7 +160,7 @@ h2::after {
 }
 
 .welcome-section p {
-    color: #555;
+    color: #7173c4;
     margin-bottom: var(--fib-spacing-3);
     line-height: 1.7;
     font-size: 1.1rem;
@@ -254,26 +255,39 @@ h2::after {
     transform: translateX(100%);
 }
 
-/* LOGIN SECTION - Glassmorphism Effect */
+/* LOGIN SECTION - Enhanced Glassmorphism Effect */
 .login-section {
     margin-top: var(--fib-spacing-3);
     border-top: 1px solid var(--fib-pastel-3);
     padding-top: var(--fib-spacing-3);
     position: relative;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 0.3rem;
     padding: var(--fib-spacing-3);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     transition: all 0.4s ease;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.login-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.05), transparent, rgba(255, 255, 255, 0.05));
+    border-radius: 0.3rem;
+    z-index: -1;
 }
 
 .login-section:hover {
-    box-shadow: 0 8px 35px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 35px rgba(0, 0, 0, 0.25);
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .login-section::before {
@@ -320,15 +334,15 @@ input[type="password"] {
     border: 1px solid var(--fib-pastel-3);
     border-radius: 0.2rem;
     font-size: 16px;
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.288);
+    color: #ffffff;
     transition: all 0.3s ease;
     font-family: 'Courier New', monospace;
 }
 
 input[type="text"]::placeholder,
 input[type="password"]::placeholder {
-    color: rgba(0, 0, 0, 0.5);
+    color: rgb(255, 255, 255);
     font-style: italic;
 }
 
@@ -336,8 +350,8 @@ input[type="text"]:focus,
 input[type="password"]:focus {
     outline: none;
     border-color: var(--fib-pastel-5);
-    box-shadow: 0 0 8px rgba(155, 89, 182, 0.3);
-    background-color: white;
+    box-shadow: 0 0 8px rgba(156, 89, 182, 0.205);
+    background-color: rgba(255, 255, 255, 0.486);
 }
 
 /* Button - Dezenter */
@@ -960,7 +974,7 @@ button:active {
     }
 
     h1 {
-        font-size: 2rem;
+        font-size: 4rem;
     }
 
     h2 {
@@ -1060,8 +1074,8 @@ button:active {
     width: 100%;
     height: 100%;
     background-image:
-        linear-gradient(rgba(111, 168, 220, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(111, 168, 220, 0.03) 1px, transparent 1px);
+        linear-gradient(rgba(111, 167, 220, 0.623) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(111, 220, 187, 0.671) 1px, transparent 1px);
     background-size: 50px 50px;
     pointer-events: none;
     z-index: -2;
