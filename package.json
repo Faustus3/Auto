@@ -19,13 +19,13 @@
   "author": "Finn",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "express-rate-limit": "^6.7.0",
     "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
     "jsonwebtoken": "^9.0.2",
-    "node-fetch": "^3.3.1",
-    "dotenv": "^16.3.1"
+    "node-fetch": "^3.3.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -X GET http://localhost:11434/api/tags)",
+      "Bash(dir C:UsersFinnDesktopAuto)"
+    ]
+  }
+}

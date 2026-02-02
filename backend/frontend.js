@@ -135,7 +135,8 @@ function initWebGLAnimation() {
 class AuthService {
     constructor() {
         this.currentToken = null;
-        this.apiBaseUrl = 'http://localhost:3000/api';
+        // Make API endpoint configurable - defaults to localhost for development
+        this.apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001/api';
     }
 
     async login(username, password) {

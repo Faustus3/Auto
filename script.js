@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Send login request to backend
-            const response = await fetch('http://localhost:3000/api/auth/login', {
+            const response = await fetch('http://localhost:3001/api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load user data from backend
     async function loadUserData() {
         try {
-            const response = await fetch('http://localhost:3000/api/data/keys', {
+            const response = await fetch('http://localhost:3001/api/data/keys', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save note to backend
     async function saveNoteToBackend(note, index) {
         try {
-            const response = await fetch('http://localhost:3000/api/data/save', {
+            const response = await fetch('http://localhost:3001/api/data/save', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save blog post to backend
     async function saveBlogPostToBackend(post) {
         try {
-            const response = await fetch('http://localhost:3000/api/data/save', {
+            const response = await fetch('http://localhost:3001/api/data/save', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
