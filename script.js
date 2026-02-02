@@ -26,15 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const vs = `attribute vec2 p; void main(){gl_Position=vec4(p,0,1);}`;
     
-    const fs = `
+  const fs = `
         precision highp float;
         uniform float u_time;
         uniform vec2 u_res;
         uniform vec2 u_mouse;
         
-        vec3 c1 = vec3(0.0, 0.6, 1.0); 
-        vec3 c2 = vec3(1.0, 0.0, 0.6); 
-        vec3 c3 = vec3(0.6, 0.0, 1.0); 
+        // Reine Neon-Farben ohne Grün-Anteile
+        vec3 c1 = vec3(0.0, 0.5, 1.0); // Blau
+        vec3 c2 = vec3(1.0, 0.0, 0.5); // Pink
+        vec3 c3 = vec3(0.5, 0.0, 1.0); // Violett
 
         void main() {
             vec2 uv = (gl_FragCoord.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
@@ -45,45 +46,46 @@ document.addEventListener('DOMContentLoaded', () => {
             
             float dist = length(uv - m);
             
-            // 1. Chaos-Faktor reduziert (weniger "elektrisches Zittern")
+            // Chaos-Zittern reduziert und stabilisiert gegen Artefakte
             float chaos = 0.0;
-            if(dist < 0.6) {
-                float strength = smoothstep(0.6, 0.0, dist);
-                chaos = sin(uv.y * 50.0 + t * 20.0) * strength * 0.2; // War 0.5
-                chaos += sin(uv.x * 50.0 - t * 15.0) * strength * 0.2;
+            if(dist < 0.5) {
+                float strength = smoothstep(0.5, 0.0, dist);
+                // Wir nutzen nur uv.y für das Zittern, um Moiré-Effekte (Punkte) zu vermeiden
+                chaos = sin(uv.y * 40.0 + t * 15.0) * strength * 0.15;
             }
 
             for(float i = 0.0; i < 15.0; i++) {
                 float unit = i / 15.0;
                 float offset = i * 0.3;
                 
-                float wave = sin(uv.x * (2.0 + unit) + t + offset);
-                wave += sin(uv.y * (1.5 + unit) * 0.5 + t * 0.7);
+                // Basis-Wellenfunktion
+                float wave = sin(uv.x * (1.5 + unit) + t + offset);
+                wave += cos(uv.y * (1.0 + unit) * 0.5 + t * 0.5);
                 
-                // 2. Ripple-Effekt massiv gedimmt & lokalisiert
-                // Wir erhöhen den Nenner (dist + 0.5), das macht den Wirkungsgrad enger
-                float interaction = 0.4 / (dist + 0.5); 
-                
-                // Hier multiplizieren wir am Ende mit 0.15 (statt 0.5) -> VIEL subtiler
-                wave += sin(interaction * 5.0 - t * 10.0) * interaction * 0.15; 
+                // Subtiler Ripple ohne mathematische Singularitäten
+                // Wir addieren 0.8 zum Nenner, um Division durch 0 (Punkte-Bildung) zu verhindern
+                float interaction = 0.3 / (dist + 0.8); 
+                wave += sin(interaction * 4.0 - t * 8.0) * interaction * 0.12;
                 wave += chaos; 
 
+                // Linien-Berechnung mit "Safe-Zone" gegen Pixel-Fehler
                 float line = abs(uv.y - wave * 0.3);
+                line = max(line, 0.001); // Verhindert unendlich helle Punkte (Artefakte)
                 
-                // Dicke auch leicht reduziert für mehr Eleganz
-                float thickness = 0.0015 + (chaos * 0.005); 
-                float glow = thickness / line;
-                float softGlow = (0.0005 + chaos * 0.002) / pow(line, 1.2);
+                float glow = 0.0015 / line;
+                float softGlow = 0.0008 / pow(line, 1.1);
                 
+                // Farb-Mischung
                 vec3 color = mix(c1, c2, sin(t + unit * 6.28) * 0.5 + 0.5);
                 color = mix(color, c3, cos(uv.x + t) * 0.5 + 0.5);
                 
-                color += vec3(chaos * 1.0); // Blitz-Effekt auch reduziert
-
-                finalColor += color * (glow + softGlow);
+                // Wir klemmen die Helligkeit, damit keine "Neon-Explosionen" entstehen
+                finalColor += clamp(color * (glow + softGlow), 0.0, 1.5);
             }
 
-            finalColor *= 1.0 - length(uv * 0.5);
+            // Starke Vignette, um den Fokus auf die Mitte zu legen und Ränder sauber zu halten
+            finalColor *= smoothstep(1.5, 0.3, length(uv * 0.7));
+            
             gl_FragColor = vec4(finalColor, 1.0);
         }
     `;
