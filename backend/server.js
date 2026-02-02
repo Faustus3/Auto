@@ -11,7 +11,6 @@ const path = require('path');
 
 // Import services
 const AuthService = require('./auth-service');
-const OllamaService = require('./ollama-service');
 const DataService = require('./data-service');
 
 const app = express();
@@ -19,7 +18,6 @@ const PORT = process.env.PORT || 3000;
 
 // Create service instances
 const authService = new AuthService(process.env.JWT_SECRET);
-const ollamaService = new OllamaService(process.env.OLLAMA_URL);
 const dataService = new DataService();
 
 // Middleware
@@ -129,7 +127,6 @@ app.use('/api/*', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Ollama URL: ${process.env.OLLAMA_URL}`);
 });
 
 module.exports = app;
