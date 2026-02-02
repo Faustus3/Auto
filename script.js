@@ -18,163 +18,110 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = '';
     let currentToken = '';
 
-    // --- GLSL Background Animation ---
-    const gl = glCanvas.getContext('webgl');
-    if (!gl) {
-        console.error('WebGL not supported, falling back to 2D canvas or no animation.');
-        return;
-    }
+// --- High-Frequency Neon String Animation ---
+    const canvas = glCanvas;
+    const gl = canvas.getContext('webgl', { antialias: true });
 
-    // Set canvas size
-    glCanvas.width = window.innerWidth;
-    glCanvas.height = window.innerHeight;
-    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+    if (!gl) return;
 
-    window.addEventListener('resize', () => {
-        glCanvas.width = window.innerWidth;
-        glCanvas.height = window.innerHeight;
-        gl.viewport(0, 0, glCanvas.width, glCanvas.height);
-    });
-
-    const vertexShaderSource = `
-        attribute vec2 a_position;
-        void main() {
-            gl_Position = vec4(a_position, 0, 1);
-        }
-    `;
-
-    // Fragment-Shader mit dunkleren, ruhigeren Farben
-    const fragmentShaderSource = `
+    const vs = `attribute vec2 p; void main(){gl_Position=vec4(p,0,1);}`;
+    
+    const fs = `
         precision highp float;
         uniform float u_time;
-        uniform vec2 u_resolution;
+        uniform vec2 u_res;
+        uniform vec2 u_mouse;
+        
+        // Starke Neon-Farben (XRP-Blau, Pink, Violett)
+        vec3 c1 = vec3(0.0, 0.5, 1.0); // Electric Blue
+        vec3 c2 = vec3(1.0, 0.0, 0.5); // Deep Pink
+        vec3 c3 = vec3(0.5, 0.0, 1.0); // Purple Neon
 
-        // Dunklere, satte Farben
-        vec3 getDarkColor(float index) {
-            index = mod(index, 5.0);
-
-            if (index < 1.0) return vec3(0.2, 0.1, 0.4);      // Dunkelblau
-            else if (index < 2.0) return vec3(0.3, 0.0, 0.3); // Dunkellila
-            else if (index < 3.0) return vec3(0.1, 0.1, 0.5); // Tiefblau
-            else if (index < 4.0) return vec3(0.4, 0.0, 0.2); // Dunkelrot
-            else return vec3(0.0, 0.2, 0.3);                  // Dunkeltürkis
-        }
-
-        // Minimalistische Linien-Muster
-        float linePattern(vec2 st, float angle, float spacing, float width) {
-            float line = abs(sin(st.x * cos(angle) + st.y * sin(angle) + u_time * 0.05));
-            return smoothstep(0.0, width, line) * smoothstep(spacing, spacing - width, line);
-        }
-
-        // Sanfte Wellen mit viel langsamerer Animation
         void main() {
-            vec2 st = gl_FragCoord.xy / u_resolution.xy;
-            st.x *= u_resolution.x / u_resolution.y; // Seitenverhältnis korrigieren
-
-            // Langsame Farbauswahl
-            float colorIndex = floor(mod(u_time * 0.05, 5.0)); // 20x langsamer
-            vec3 baseColor = getDarkColor(colorIndex);
-
-            // Sehr sanfte Wellen mit reduzierter Frequenz
-            float wave1 = 0.5 + 0.5 * sin(st.x * 2.0 + u_time * 0.1); // 10x langsamer
-            float wave2 = 0.5 + 0.5 * sin(st.y * 3.0 + u_time * 0.08);
-            float wave3 = 0.5 + 0.5 * sin(length(st - 0.5) * 4.0 + u_time * 0.12);
-
-            // Sanfte Farbmischung
-            vec3 color1 = getDarkColor(colorIndex);
-            vec3 color2 = getDarkColor(colorIndex + 1.0);
-            vec3 color3 = getDarkColor(colorIndex + 2.0);
-
-            vec3 finalColor = mix(color1, color2, wave1 * 0.3); // Weniger intensive Mischung
-            finalColor = mix(finalColor, color3, wave2 * 0.2);
-            finalColor = mix(finalColor, vec3(0.1), wave3 * 0.1); // Leichte Abdunkelung
-
-            // Minimalistische Linien-Muster hinzufügen
-            float lines = 0.0;
+            vec2 uv = (gl_FragCoord.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
+            vec2 m = (u_mouse.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
             
-            // Horizontale Linien (sehr subtil)
-            lines += linePattern(st, 0.0, 0.15, 0.002) * 0.3;
+            float t = u_time * 0.4;
             
-            // Vertikale Linien (sehr subtil)
-            lines += linePattern(st, 1.57, 0.15, 0.002) * 0.3;
+            // Hintergrund: Tiefes Schwarz
+            vec3 finalColor = vec3(0.0);
             
-            // Diagonale Linien (sehr subtil)
-            lines += linePattern(st, 0.785, 0.2, 0.0015) * 0.2;
-            lines += linePattern(st, -0.785, 0.2, 0.0015) * 0.2;
-            
-            // Linien zu den Farben hinzufügen (leicht aufgehellt)
-            vec3 lineColor = finalColor + vec3(0.15);
-            finalColor = mix(finalColor, lineColor, lines);
+            // Wir rendern 15 einzelne "Fäden" für die Komplexität
+            for(float i = 0.0; i < 15.0; i++) {
+                // Die Mathematik der Wellen-Interferenz
+                float unit = i / 15.0;
+                float offset = i * 0.3;
+                
+                // Wellen-Gleichung mit Maus-Beugung
+                float wave = sin(uv.x * (2.0 + unit) + t + offset);
+                wave += sin(uv.y * (1.5 + unit) * 0.5 + t * 0.7);
+                
+                // Maus-Einfluss: nur eine ganz leichte Krümmung der Raumzeit
+                float mouseDist = length(uv - m);
+                wave += 0.05 / (mouseDist + 0.5); 
 
-            // Sanfte Vignette
-            float vignette = 1.0 - smoothstep(0.0, 1.0, length(st - 0.5) * 1.2);
-            finalColor = finalColor * vignette;
+                // Erzeugung der extrem dünnen Linien
+                float line = abs(uv.y - wave * 0.3);
+                float glow = 0.002 / line; // Der Kern der Linie
+                float softGlow = 0.001 / pow(line, 1.2); // Ein Hauch von Schein
+                
+                // Farbverlauf über die Zeit und Position
+                vec3 color = mix(c1, c2, sin(t + unit * 6.28) * 0.5 + 0.5);
+                color = mix(color, c3, cos(uv.x + t) * 0.5 + 0.5);
+                
+                finalColor += color * (glow + softGlow);
+            }
 
+            // Vignette für mehr Tiefe
+            finalColor *= 1.0 - length(uv * 0.5);
+            
             gl_FragColor = vec4(finalColor, 1.0);
         }
     `;
 
-    function createShader(gl, type, source) {
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            console.error('Shader compilation failed:', gl.getShaderInfoLog(shader));
-            gl.deleteShader(shader);
-            return null;
-        }
-        return shader;
+    function createProg(gl, vsS, fsS) {
+        const p = gl.createProgram();
+        [vsS, fsS].forEach((s, i) => {
+            const sh = gl.createShader(i ? gl.FRAGMENT_SHADER : gl.VERTEX_SHADER);
+            gl.shaderSource(sh, s);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
+            gl.attachShader(p, sh);
+        });
+        gl.linkProgram(p);
+        return p;
     }
 
-    function createProgram(gl, vertexShader, fragmentShader) {
-        const program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error('Program linking failed:', gl.getProgramInfoLog(program));
-            gl.deleteProgram(program);
-            return null;
-        }
-        return program;
-    }
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    const program = createProgram(gl, vertexShader, fragmentShader);
-
+    const program = createProg(gl, vs, fs);
     gl.useProgram(program);
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+    const pLoc = gl.getAttribLocation(program, 'p');
+    gl.enableVertexAttribArray(pLoc);
+    gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
 
-    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-    const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
-    const resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
+    const uTime = gl.getUniformLocation(program, 'u_time');
+    const uRes = gl.getUniformLocation(program, 'u_res');
+    const uMouse = gl.getUniformLocation(program, 'u_mouse');
 
-    const positions = new Float32Array([
-        -1, -1,
-         1, -1,
-        -1,  1,
-        -1,  1,
-         1, -1,
-         1,  1,
-    ]);
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', e => {
+        mouseX = e.clientX;
+        mouseY = window.innerHeight - e.clientY;
+    });
 
-    gl.enableVertexAttribArray(positionAttributeLocation);
-    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
-    let startTime = Date.now();
-
-    function animate() {
-        const currentTime = (Date.now() - startTime) * 0.001;
-        gl.uniform1f(timeUniformLocation, currentTime);
-        gl.uniform2f(resolutionUniformLocation, glCanvas.width, glCanvas.height);
-
+    function render(t) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.uniform1f(uTime, t * 0.001);
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform2f(uMouse, mouseX, mouseY);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
-        requestAnimationFrame(animate);
+        requestAnimationFrame(render);
     }
-    animate();
+    requestAnimationFrame(render);
 
     // --- Login Functionality ---
     // Automatisches Ausfüllen für Debugging (optional, aber hilfreich)
