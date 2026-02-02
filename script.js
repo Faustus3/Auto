@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = '';
     let currentToken = '';
 
-// --- High-Frequency Neon String Animation ---
+// --- High-Frequency Neon String Animation (CHAOS EDITION) ---
     const canvas = glCanvas;
     const gl = canvas.getContext('webgl', { antialias: true });
 
@@ -32,48 +32,67 @@ document.addEventListener('DOMContentLoaded', () => {
         uniform vec2 u_res;
         uniform vec2 u_mouse;
         
-        // Starke Neon-Farben (XRP-Blau, Pink, Violett)
-        vec3 c1 = vec3(0.0, 0.5, 1.0); // Electric Blue
-        vec3 c2 = vec3(1.0, 0.0, 0.5); // Deep Pink
-        vec3 c3 = vec3(0.5, 0.0, 1.0); // Purple Neon
+        // Farben: Electric Blue, Hot Pink, Deep Purple
+        vec3 c1 = vec3(0.0, 0.6, 1.0); 
+        vec3 c2 = vec3(1.0, 0.0, 0.6); 
+        vec3 c3 = vec3(0.6, 0.0, 1.0); 
 
         void main() {
+            // Normalisierte Koordinaten (-1 bis 1)
             vec2 uv = (gl_FragCoord.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
             vec2 m = (u_mouse.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
             
             float t = u_time * 0.4;
-            
-            // Hintergrund: Tiefes Schwarz
             vec3 finalColor = vec3(0.0);
             
-            // Wir rendern 15 einzelne "Fäden" für die Komplexität
+            // Berechnung des Maus-Einflusses (Das Chaos-Feld)
+            float dist = length(uv - m);
+            
+            // Chaos-Formel: Je näher die Maus, desto stärker bricht die Mathematik
+            // Wir nutzen sin() mit hoher Frequenz für ein "elektrisches" Zittern
+            float chaos = 0.0;
+            if(dist < 0.6) {
+                float strength = smoothstep(0.6, 0.0, dist); // 0 bis 1 Stärke
+                // Das hier erzeugt das Zittern/Rauschen
+                chaos = sin(uv.y * 50.0 + t * 20.0) * strength * 0.5; 
+                chaos += sin(uv.x * 50.0 - t * 15.0) * strength * 0.5;
+            }
+
+            // Loop für die 15 Fäden
             for(float i = 0.0; i < 15.0; i++) {
-                // Die Mathematik der Wellen-Interferenz
                 float unit = i / 15.0;
                 float offset = i * 0.3;
                 
-                // Wellen-Gleichung mit Maus-Beugung
+                // Basis-Welle (Die Ordnung)
                 float wave = sin(uv.x * (2.0 + unit) + t + offset);
                 wave += sin(uv.y * (1.5 + unit) * 0.5 + t * 0.7);
                 
-                // Maus-Einfluss: nur eine ganz leichte Krümmung der Raumzeit
-                float mouseDist = length(uv - m);
-                wave += 0.05 / (mouseDist + 0.5); 
+                // INJEKTION DES CHAOS:
+                // Wir addieren das Chaos direkt auf die Wellen-Position
+                // und verzerren die Amplitude massiv, wenn die Maus nah ist.
+                float interaction = 0.8 / (dist + 0.1); // Starke Abstoßung
+                wave += sin(interaction * 5.0 - t * 10.0) * interaction * 0.5; // Schockwellen
+                wave += chaos; // Das elektrische Zittern
 
-                // Erzeugung der extrem dünnen Linien
+                // Linien zeichnen
                 float line = abs(uv.y - wave * 0.3);
-                float glow = 0.002 / line; // Der Kern der Linie
-                float softGlow = 0.001 / pow(line, 1.2); // Ein Hauch von Schein
                 
-                // Farbverlauf über die Zeit und Position
+                // Dicke und Glow variieren mit dem Chaos
+                float thickness = 0.002 + (chaos * 0.01); 
+                float glow = thickness / line;
+                float softGlow = (0.001 + chaos * 0.005) / pow(line, 1.2);
+                
+                // Farb-Logik
                 vec3 color = mix(c1, c2, sin(t + unit * 6.28) * 0.5 + 0.5);
                 color = mix(color, c3, cos(uv.x + t) * 0.5 + 0.5);
                 
+                // Wenn Chaos herrscht, werden die Farben heller/weißer (Energie-Überladung)
+                color += vec3(chaos * 2.0); 
+
                 finalColor += color * (glow + softGlow);
             }
 
-            // Vignette für mehr Tiefe
-            finalColor *= 1.0 - length(uv * 0.5);
+            finalColor *= 1.0 - length(uv * 0.5); // Vignette
             
             gl_FragColor = vec4(finalColor, 1.0);
         }
@@ -85,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const sh = gl.createShader(i ? gl.FRAGMENT_SHADER : gl.VERTEX_SHADER);
             gl.shaderSource(sh, s);
             gl.compileShader(sh);
-            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(sh));
             gl.attachShader(p, sh);
         });
         gl.linkProgram(p);
