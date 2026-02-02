@@ -32,68 +32,58 @@ document.addEventListener('DOMContentLoaded', () => {
         uniform vec2 u_res;
         uniform vec2 u_mouse;
         
-        // Farben: Electric Blue, Hot Pink, Deep Purple
         vec3 c1 = vec3(0.0, 0.6, 1.0); 
         vec3 c2 = vec3(1.0, 0.0, 0.6); 
         vec3 c3 = vec3(0.6, 0.0, 1.0); 
 
         void main() {
-            // Normalisierte Koordinaten (-1 bis 1)
             vec2 uv = (gl_FragCoord.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
             vec2 m = (u_mouse.xy * 2.0 - u_res.xy) / min(u_res.x, u_res.y);
             
             float t = u_time * 0.4;
             vec3 finalColor = vec3(0.0);
             
-            // Berechnung des Maus-Einflusses (Das Chaos-Feld)
             float dist = length(uv - m);
             
-            // Chaos-Formel: Je näher die Maus, desto stärker bricht die Mathematik
-            // Wir nutzen sin() mit hoher Frequenz für ein "elektrisches" Zittern
+            // 1. Chaos-Faktor reduziert (weniger "elektrisches Zittern")
             float chaos = 0.0;
             if(dist < 0.6) {
-                float strength = smoothstep(0.6, 0.0, dist); // 0 bis 1 Stärke
-                // Das hier erzeugt das Zittern/Rauschen
-                chaos = sin(uv.y * 50.0 + t * 20.0) * strength * 0.5; 
-                chaos += sin(uv.x * 50.0 - t * 15.0) * strength * 0.5;
+                float strength = smoothstep(0.6, 0.0, dist);
+                chaos = sin(uv.y * 50.0 + t * 20.0) * strength * 0.2; // War 0.5
+                chaos += sin(uv.x * 50.0 - t * 15.0) * strength * 0.2;
             }
 
-            // Loop für die 15 Fäden
             for(float i = 0.0; i < 15.0; i++) {
                 float unit = i / 15.0;
                 float offset = i * 0.3;
                 
-                // Basis-Welle (Die Ordnung)
                 float wave = sin(uv.x * (2.0 + unit) + t + offset);
                 wave += sin(uv.y * (1.5 + unit) * 0.5 + t * 0.7);
                 
-                // INJEKTION DES CHAOS:
-                // Wir addieren das Chaos direkt auf die Wellen-Position
-                // und verzerren die Amplitude massiv, wenn die Maus nah ist.
-                float interaction = 0.8 / (dist + 0.1); // Starke Abstoßung
-                wave += sin(interaction * 5.0 - t * 10.0) * interaction * 0.5; // Schockwellen
-                wave += chaos; // Das elektrische Zittern
+                // 2. Ripple-Effekt massiv gedimmt & lokalisiert
+                // Wir erhöhen den Nenner (dist + 0.5), das macht den Wirkungsgrad enger
+                float interaction = 0.4 / (dist + 0.5); 
+                
+                // Hier multiplizieren wir am Ende mit 0.15 (statt 0.5) -> VIEL subtiler
+                wave += sin(interaction * 5.0 - t * 10.0) * interaction * 0.15; 
+                wave += chaos; 
 
-                // Linien zeichnen
                 float line = abs(uv.y - wave * 0.3);
                 
-                // Dicke und Glow variieren mit dem Chaos
-                float thickness = 0.002 + (chaos * 0.01); 
+                // Dicke auch leicht reduziert für mehr Eleganz
+                float thickness = 0.0015 + (chaos * 0.005); 
                 float glow = thickness / line;
-                float softGlow = (0.001 + chaos * 0.005) / pow(line, 1.2);
+                float softGlow = (0.0005 + chaos * 0.002) / pow(line, 1.2);
                 
-                // Farb-Logik
                 vec3 color = mix(c1, c2, sin(t + unit * 6.28) * 0.5 + 0.5);
                 color = mix(color, c3, cos(uv.x + t) * 0.5 + 0.5);
                 
-                // Wenn Chaos herrscht, werden die Farben heller/weißer (Energie-Überladung)
-                color += vec3(chaos * 2.0); 
+                color += vec3(chaos * 1.0); // Blitz-Effekt auch reduziert
 
                 finalColor += color * (glow + softGlow);
             }
 
-            finalColor *= 1.0 - length(uv * 0.5); // Vignette
-            
+            finalColor *= 1.0 - length(uv * 0.5);
             gl_FragColor = vec4(finalColor, 1.0);
         }
     `;
