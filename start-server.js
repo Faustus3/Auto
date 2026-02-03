@@ -9,6 +9,10 @@ const path = require('path');
 // Configuration
 const SERVER_PORT = process.env.PORT || 3001;
 const BACKEND_DIR = path.join(__dirname, 'backend');
+
+// Persistent zrok URL (reserved with: zrok reserve public http://localhost:3001 --unique-name finnserver)
+const ZROK_RESERVED_URL = 'https://finnserver.share.zrok.io';
+
 let serverProcess = null;
 let zrokProcess = null;
 
@@ -69,9 +73,9 @@ function startZrok() {
   return new Promise((resolve, reject) => {
     log('\n🌐 Starting zrok tunnel...', 'cyan');
     log(`   Sharing: http://localhost:${SERVER_PORT}`, 'yellow');
-    log('   Waiting for zrok to provide public URL...\n', 'yellow');
-    
-    zrokProcess = spawn('zrok', ['share', 'public', `http://localhost:${SERVER_PORT}`], {
+    log(`   Reserved URL: ${ZROK_RESERVED_URL}\n`, 'yellow');
+
+    zrokProcess = spawn('zrok', ['share', 'reserved', ZROK_RESERVED_URL], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
@@ -79,26 +83,23 @@ function startZrok() {
 
     zrokProcess.stdout.on('data', (data) => {
       const output = data.toString();
-      
-      // Look for the zrok URL in the output
-      const urlMatch = output.match(/(https?:\/\/[^\s]+\.zrok\.io)/);
-      if (urlMatch && !publicUrl) {
-        publicUrl = urlMatch[1];
+
+      if (output.includes('bound to') || output.includes('forwarding')) {
+        publicUrl = ZROK_RESERVED_URL;
         log('\n✅ PUBLIC URL READY!', 'green');
         log(`   ${publicUrl}`, 'cyan');
         log('\n📱 Your Auto Dashboard is now accessible from anywhere!', 'green');
         log('   Share this URL with friends or access it on your phone.\n', 'yellow');
         resolve(publicUrl);
       }
-      
+
       process.stdout.write(`${colors.cyan}[ZROK] ${colors.reset}${output}`);
     });
 
     zrokProcess.stderr.on('data', (data) => {
       const output = data.toString();
       process.stderr.write(`${colors.red}[ZROK ERROR] ${colors.reset}${output}`);
-      
-      // Check for common errors
+
       if (output.includes('not enabled') || output.includes('enable')) {
         log('\n❌ ERROR: zrok is not enabled!', 'red');
         log('   Run: zrok enable <your-token>', 'yellow');
@@ -118,7 +119,6 @@ function startZrok() {
       }
     });
 
-    // Timeout after 30 seconds
     setTimeout(() => {
       if (!publicUrl) {
         reject(new Error('zrok failed to provide public URL within 30 seconds'));

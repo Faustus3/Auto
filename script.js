@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isZrokDomain = window.location.hostname.includes('zrok.io') || 
                          window.location.hostname.includes('sohaltweil.de');
     const API_BASE_URL = isZrokDomain 
-        ? 'https://36frcufok6rw.share.zrok.io/api'
+        ? 'https://finnserver.share.zrok.io/api'
         : 'http://localhost:3001/api';
     
     console.log('API Base URL:', API_BASE_URL);
