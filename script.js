@@ -19,9 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentToken = '';
 
     // Auto-detect API URL for zrok compatibility
-    // If running on zrok domain (zrok.io), use relative URLs (same origin)
+    // If running on zrok domain (zrok.io) or sohaltweil.de, use relative URLs (same origin)
     // Otherwise, use localhost:3001 for local development
-    const isZrokDomain = window.location.hostname.includes('zrok.io');
+    const isZrokDomain = window.location.hostname.includes('zrok.io') || 
+                         window.location.hostname.includes('sohaltweil.de');
     const API_BASE_URL = isZrokDomain 
         ? `${window.location.protocol}//${window.location.host}/api`
         : 'http://localhost:3001/api';
