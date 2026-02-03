@@ -98,11 +98,6 @@ app.get('/api/data/keys', authService.authenticateToken, async (req, res) => {
   }
 });
 
-// Serve static files
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
-});
-
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
