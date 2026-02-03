@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput ? passwordInput.value : '';
 
         try {
-            // Send login request to backend
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
@@ -166,26 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ username, password })
             });
 
-            // Check if response is ok before trying to parse JSON
+            const data = await response.json();
+
             if (!response.ok) {
-                // Try to get error message from response
-                let errorData;
-                try {
-                    errorData = await response.json();
-                } catch (jsonError) {
-                    // If JSON parsing fails, get text content
-                    const text = await response.text();
-                    console.error('Error response (text):', text);
-                    loginMessage.textContent = 'Fehler bei der Anmeldung. Server meldet: ' + text;
-                    loginMessage.className = 'message error';
-                    return;
-                }
-                loginMessage.textContent = errorData.error || 'Ungültiger Benutzername oder Passwort.';
+                loginMessage.textContent = data.error || 'Ungültiger Benutzername oder Passwort.';
                 loginMessage.className = 'message error';
                 return;
             }
-
-            const data = await response.json();
 
             if (response.ok) {
                 currentUser = username;

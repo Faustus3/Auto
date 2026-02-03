@@ -7,7 +7,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const path = require('path');
 
 // Import services
 const AuthService = require('./auth-service');
@@ -22,7 +21,6 @@ const dataService = new DataService();
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../')));
 
 // CORS configuration
 // Allow all origins for zrok compatibility (URLs change dynamically)
@@ -108,6 +106,11 @@ app.get('/', (req, res) => {
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Handle 404 for all other routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found. This is an API-only server.' });
 });
 
 // Start server
