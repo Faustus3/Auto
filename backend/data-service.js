@@ -67,6 +67,54 @@ class DataService {
       return { keys: [] };
     }
   }
+
+  // === SHARED BLOG POSTS ===
+
+  async getSharedBlogPosts() {
+    try {
+      const blogFile = path.join(this.dataDir, 'shared', 'blog_posts.json');
+      await fs.access(blogFile);
+      const data = await fs.readFile(blogFile, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async saveSharedBlogPosts(posts) {
+    const sharedDir = path.join(this.dataDir, 'shared');
+    try {
+      await fs.access(sharedDir);
+    } catch {
+      await fs.mkdir(sharedDir, { recursive: true });
+    }
+    const blogFile = path.join(sharedDir, 'blog_posts.json');
+    await fs.writeFile(blogFile, JSON.stringify(posts, null, 2));
+    return { success: true };
+  }
+
+  async addSharedBlogPost(post) {
+    const posts = await this.getSharedBlogPosts();
+    posts.unshift(post);
+    await this.saveSharedBlogPosts(posts);
+    return post;
+  }
+
+  async updateSharedBlogPost(id, updatedPost) {
+    const posts = await this.getSharedBlogPosts();
+    const index = posts.findIndex(p => p.id === id);
+    if (index === -1) throw new Error('Post not found');
+    posts[index] = { ...posts[index], ...updatedPost };
+    await this.saveSharedBlogPosts(posts);
+    return posts[index];
+  }
+
+  async deleteSharedBlogPost(id) {
+    const posts = await this.getSharedBlogPosts();
+    const filtered = posts.filter(p => p.id !== id);
+    await this.saveSharedBlogPosts(filtered);
+    return { success: true };
+  }
 }
 
 module.exports = DataService;

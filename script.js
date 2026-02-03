@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Notizen aus localStorage laden
     let notes = JSON.parse(localStorage.getItem('finn-notes')) || [];
 
-    // Blog-Artikel aus localStorage laden
-    let blogPosts = JSON.parse(localStorage.getItem('finn-blog-posts')) || [];
+    // Blog posts will be loaded from shared backend
+    let blogPosts = [];
     let currentUser = '';
     let currentToken = '';
 
@@ -415,8 +415,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Load notes and blog posts from backend if they exist
                 // This would be implemented based on your data structure
             }
+
+            // Load shared blog posts
+            await loadSharedBlogPosts();
         } catch (error) {
             console.error('Error loading user data:', error);
+        }
+    }
+
+    // Load shared blog posts from backend
+    async function loadSharedBlogPosts() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/posts`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                blogPosts = await response.json();
+                renderBlogPosts();
+            }
+        } catch (error) {
+            console.error('Error loading shared blog posts:', error);
         }
     }
 
@@ -443,18 +466,19 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         }
     }
 
-    // Save blog post to backend
+    // Save blog post to shared backend
     async function saveBlogPostToBackend(post) {
         try {
-            const response = await fetch(`${API_BASE_URL}/data/save`, {
+            const response = await fetch(`${API_BASE_URL}/blog/posts`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    key: `blog_${post.id}`,
-                    data: post
+                    title: post.title,
+                    content: post.content,
+                    tags: post.tags
                 })
             });
 
@@ -463,6 +487,49 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             }
         } catch (error) {
             console.error('Error saving blog post:', error);
+        }
+    }
+
+    // Update blog post on shared backend
+    async function updateBlogPostOnBackend(post) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/posts/${post.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: post.title,
+                    content: post.content,
+                    tags: post.tags
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update blog post');
+            }
+        } catch (error) {
+            console.error('Error updating blog post:', error);
+        }
+    }
+
+    // Delete blog post from shared backend
+    async function deleteBlogPostOnBackend(postId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/blog/posts/${postId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete blog post');
+            }
+        } catch (error) {
+            console.error('Error deleting blog post:', error);
         }
     }
 
@@ -503,17 +570,18 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
         if (isEditingBlog && editingBlogId !== null) {
             // Artikel bearbeiten
-            blogPosts[editingBlogId] = {
-                ...blogPosts[editingBlogId],
-                title: title,
-                content: content,
-                tags: tagsArray,
-                lastModified: new Date().toLocaleDateString('de-DE')
-            };
+            const post = blogPosts.find(p => p.id === editingBlogId);
+            if (post) {
+                post.title = title;
+                post.content = content;
+                post.tags = tagsArray;
+                post.lastModified = new Date().toLocaleDateString('de-DE');
+                await updateBlogPostOnBackend(post);
+            }
         } else {
             // Neuer Artikel
             const newPost = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 title: title,
                 content: content,
                 tags: tagsArray,
@@ -522,16 +590,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                 lastModified: new Date().toLocaleDateString('de-DE')
             };
             blogPosts.unshift(newPost);
-        }
-
-        // Save to localStorage (for demo purposes)
-        localStorage.setItem('finn-blog-posts', JSON.stringify(blogPosts));
-
-        // Save to backend
-        if (isEditingBlog && editingBlogId !== null) {
-            await saveBlogPostToBackend(blogPosts[editingBlogId]);
-        } else {
-            await saveBlogPostToBackend(blogPosts[0]);
+            await saveBlogPostToBackend(newPost);
         }
 
         renderBlogPosts();
@@ -587,6 +646,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         postElement.className = 'blog-post';
         
         const tagsHtml = post.tags.map(tag => `<span class="blog-tag">${tag}</span>`).join('');
+        const authorDisplay = post.authorDisplayName || post.author;
         
         postElement.innerHTML = `
             <h3>${post.title}</h3>
@@ -594,16 +654,14 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             <div class="blog-meta">
                 <div class="blog-tags">${tagsHtml}</div>
                 <div>
-                    <span class="blog-author">von ${post.author}</span>
+                    <span class="blog-author">von ${authorDisplay}</span>
                     <span class="blog-date">am ${post.date}</span>
                 </div>
             </div>
-            ${post.author === currentUser ? `
-                <div class="blog-actions">
-                    <button class="edit-blog-btn" onclick="editBlogPost(${post.id})">Bearbeiten</button>
-                    <button class="delete-blog-btn" onclick="deleteBlogPost(${post.id})">Löschen</button>
-                </div>
-            ` : ''}
+            <div class="blog-actions">
+                <button class="edit-blog-btn" onclick="editBlogPost('${post.id}')">Bearbeiten</button>
+                <button class="delete-blog-btn" onclick="deleteBlogPost('${post.id}')">Löschen</button>
+            </div>
         `;
         
         return postElement;
@@ -622,14 +680,14 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         blogEditor.style.display = 'block';
         addBlogBtn.style.display = 'none';
         isEditingBlog = true;
-        editingBlogId = postIndex;
+        editingBlogId = postId;
     };
     
     // Blog-Artikel löschen
-    window.deleteBlogPost = function(postId) {
+    window.deleteBlogPost = async function(postId) {
         if (confirm('Blog-Artikel wirklich löschen?')) {
             blogPosts = blogPosts.filter(post => post.id !== postId);
-            localStorage.setItem('finn-blog-posts', JSON.stringify(blogPosts));
+            await deleteBlogPostOnBackend(postId);
             renderBlogPosts();
         }
     };

@@ -101,6 +101,67 @@ app.get('/api/data/keys', authService.authenticateToken, async (req, res) => {
   }
 });
 
+// === SHARED BLOG ENDPOINTS ===
+
+app.get('/api/blog/posts', authService.authenticateToken, async (req, res) => {
+  try {
+    const posts = await dataService.getSharedBlogPosts();
+    res.json(posts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/blog/posts', authService.authenticateToken, async (req, res) => {
+  try {
+    const { title, content, tags } = req.body;
+    if (!title || !content) {
+      return res.status(400).json({ error: 'Title and content required' });
+    }
+    const newPost = {
+      id: Date.now().toString(),
+      title,
+      content,
+      tags: tags || [],
+      author: req.user.username,
+      authorDisplayName: req.user.displayName || req.user.username,
+      date: new Date().toISOString(),
+      lastModified: new Date().toISOString()
+    };
+    const post = await dataService.addSharedBlogPost(newPost);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/blog/posts/:id', authService.authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, tags } = req.body;
+    const updateData = {
+      title,
+      content,
+      tags,
+      lastModified: new Date().toISOString()
+    };
+    const post = await dataService.updateSharedBlogPost(id, updateData);
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/blog/posts/:id', authService.authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await dataService.deleteSharedBlogPost(id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
