@@ -13,7 +13,7 @@ const AuthService = require('./auth-service');
 const DataService = require('./data-service');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Create service instances
 const authService = new AuthService(process.env.JWT_SECRET);
