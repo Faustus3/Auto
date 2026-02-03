@@ -183,6 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 websiteLinkSection.style.display = 'none';
                 privateFilesSection.style.display = 'block';
 
+                // Chat-Kachel anzeigen
+                showChatTile();
+
                 const utilityTracker = document.getElementById('utility-tracker');
                 if (utilityTracker) {
                     utilityTracker.style.display = 'block';
@@ -873,28 +876,6 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         }
     });
 
-    // Show chat tile after successful login
-    const originalLoginSuccess = loginForm.addEventListener;
-    const showChatTile = () => {
-        if (chatTile) {
-            chatTile.style.display = 'block';
-            loadChatModels();
-        }
-    };
-
-    // Hook into the existing login success flow
-    const originalSubmitHandler = loginForm.onsubmit;
-    if (loginForm) {
-        loginForm.addEventListener('submit', () => {
-            setTimeout(showChatTile, 100);
-        });
-    }
-
-    // Check if already logged in (page refresh)
-    if (currentToken && chatTile) {
-        showChatTile();
-    }
-
     // === CHAT-KACHEL FUNKTIONALITÄT ===
     
     // Verbesserte Funktion zum Anzeigen der Kachel
@@ -922,24 +903,5 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     // Initialer Check beim Laden der Seite
     checkLoginAndShow();
-
-    // Funktion zum Laden der Chat-Modelle
-    async function loadChatModels() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/chat/models`, {
-                headers: {
-                    'Authorization': `Bearer ${currentToken}`
-                }
-            });
-
-            if (response.ok) {
-                const models = await response.json();
-                console.log('Verfügbare Modelle:', models);
-                // Hier könntest du die Modelle in einem Dropdown anzeigen
-            }
-        } catch (error) {
-            console.error('Fehler beim Laden der Modelle:', error);
-        }
-    }
 
 });
