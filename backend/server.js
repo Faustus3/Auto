@@ -192,9 +192,10 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
 
     const ollamaMessages = messages.map(msg => ({
       role: msg.role === 'system' ? 'system' : (msg.role === 'assistant' ? 'assistant' : 'user'),
-      content: msg.text
+      content: msg.text || msg.content || ''
     }));
 
+    // Versuche Streaming-Modus
     const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
@@ -245,6 +246,7 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
             res.write(`data: ${JSON.stringify(openaiFormat)}\n\n`);
           }
         } catch (e) {
+          // Ignoriere JSON-Parse-Fehler
         }
       }
     }
@@ -254,54 +256,12 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
   } catch (error) {
     console.error('Chat generation error:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Das lokale Gehirn antwortet nicht.' });
     }
   }
 });
 
-app.post('/api/chat/generate', authService.authenticateToken.bind(authService), async (req, res) => {
-  try {
-    const { model, messages } = req.body;
-    
-    if (!model || !messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: 'Model and messages are required' });
-    }
 
-    // Convert messages to OpenAI format
-    const openaiMessages = messages.map(msg => ({
-      role: msg.role === 'system' ? 'system' : (msg.role === 'assistant' ? 'assistant' : 'user'),
-      content: msg.text
-    }));
-
-    const stream = await openai.chat.completions.create({
-      model: model,
-      messages: openaiMessages,
-      stream: true
-    });
-
-    // Set SSE headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // Stream the response
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || '';
-      if (content) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-      }
-    }
-
-    res.write('data: [DONE]\n\n');
-    res.end();
-
-  } catch (error) {
-    console.error('Chat generation error:', error);
-    if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-});
 
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {

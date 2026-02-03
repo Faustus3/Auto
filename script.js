@@ -895,4 +895,51 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         showChatTile();
     }
 
+    // === CHAT-KACHEL FUNKTIONALITÄT ===
+    
+    // Verbesserte Funktion zum Anzeigen der Kachel
+    const showChatTile = () => {
+        const chatTileElement = document.getElementById('chat-tile');
+        if (chatTileElement) {
+            chatTileElement.style.setProperty('display', 'block', 'important');
+            console.log("Theater-Log: Chat-Kachel Vorhang auf!");
+            loadChatModels(); // Lädt Modelle von deinem lokalen Gehirn
+        } else {
+            console.error("Theater-Log: Kachel 'chat-tile' nicht im Bühnenbild gefunden!");
+        }
+    };
+
+    // Überprüfe Login-Status (auch nach Refresh)
+    const checkLoginAndShow = () => {
+        const token = localStorage.getItem('token') || currentToken;
+        if (token) {
+            showChatTile();
+            // Falls andere Sektionen auch versteckt sind:
+            if (loginSection) loginSection.style.display = 'none';
+            if (welcomeSection) welcomeSection.style.display = 'block';
+        }
+    };
+
+    // Initialer Check beim Laden der Seite
+    checkLoginAndShow();
+
+    // Funktion zum Laden der Chat-Modelle
+    async function loadChatModels() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat/models`, {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
+
+            if (response.ok) {
+                const models = await response.json();
+                console.log('Verfügbare Modelle:', models);
+                // Hier könntest du die Modelle in einem Dropdown anzeigen
+            }
+        } catch (error) {
+            console.error('Fehler beim Laden der Modelle:', error);
+        }
+    }
+
 });
