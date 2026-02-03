@@ -19,6 +19,9 @@ const PORT = process.env.PORT || 3000;
 const authService = new AuthService(process.env.JWT_SECRET);
 const dataService = new DataService();
 
+// Trust proxy for zrok tunnel
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(express.json());
 
