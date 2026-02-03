@@ -126,6 +126,20 @@
                     <input type="text" id="chatInput" placeholder="Nachricht eingeben..." class="chat-input">
                     <button id="chatSendBtn" class="chat-send-btn">Senden</button>
                 </div>
+                
+                <!-- Theater Script Upload -->
+                <div class="theater-upload-section">
+                    <h3>Theaterstück hochladen</h3>
+                    <div class="theater-upload-container">
+                        <input type="file" id="theaterFileInput" accept=".txt,.json,.md" class="theater-file-input">
+                        <button id="theaterUploadBtn" class="theater-upload-btn">Hochladen</button>
+                    </div>
+                    <div id="theaterUploadStatus" class="theater-upload-status"></div>
+                    <div class="theater-scripts-list">
+                        <h4>Gespeicherte Stücke</h4>
+                        <ul id="theaterScriptsList"></ul>
+                    </div>
+                </div>
             </section>
         </div>
     </div>

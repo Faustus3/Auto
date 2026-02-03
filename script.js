@@ -876,6 +876,85 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         }
     });
 
+    // === THEATER SCRIPT UPLOAD ===
+    const theaterFileInput = document.getElementById('theaterFileInput');
+    const theaterUploadBtn = document.getElementById('theaterUploadBtn');
+    const theaterUploadStatus = document.getElementById('theaterUploadStatus');
+    const theaterScriptsList = document.getElementById('theaterScriptsList');
+
+    async function loadTheaterScripts() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/theater/scripts`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const scripts = await response.json();
+                theaterScriptsList.innerHTML = '';
+                scripts.forEach(script => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="script-name">${script.filename}</span>
+                        <span class="script-info">(${script.chunkCount} Abschnitte)</span>
+                    `;
+                    theaterScriptsList.appendChild(li);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading theater scripts:', error);
+        }
+    }
+
+    async function uploadTheaterScript() {
+        const file = theaterFileInput.files[0];
+        if (!file) {
+            theaterUploadStatus.textContent = 'Bitte wähle eine Datei aus.';
+            theaterUploadStatus.className = 'theater-upload-status error';
+            return;
+        }
+
+        theaterUploadBtn.disabled = true;
+        theaterUploadStatus.textContent = 'Wird hochgeladen...';
+        theaterUploadStatus.className = 'theater-upload-status';
+
+        const formData = new FormData();
+        formData.append('script', file);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/theater/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                theaterUploadStatus.textContent = `Erfolg! ${result.chunkCount} Abschnitte gespeichert.`;
+                theaterUploadStatus.className = 'theater-upload-status success';
+                theaterFileInput.value = '';
+                loadTheaterScripts();
+            } else {
+                const error = await response.json();
+                theaterUploadStatus.textContent = error.error || 'Upload fehlgeschlagen.';
+                theaterUploadStatus.className = 'theater-upload-status error';
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            theaterUploadStatus.textContent = 'Netzwerkfehler beim Upload.';
+            theaterUploadStatus.className = 'theater-upload-status error';
+        } finally {
+            theaterUploadBtn.disabled = false;
+        }
+    }
+
+    theaterUploadBtn.addEventListener('click', uploadTheaterScript);
+
     // === CHAT-KACHEL FUNKTIONALITÄT ===
     
     // Verbesserte Funktion zum Anzeigen der Kachel
@@ -885,6 +964,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             chatTileElement.style.setProperty('display', 'block', 'important');
             console.log("Theater-Log: Chat-Kachel Vorhang auf!");
             loadChatModels(); // Lädt Modelle von deinem lokalen Gehirn
+            loadTheaterScripts(); // Lädt gespeicherte Theaterstücke
         } else {
             console.error("Theater-Log: Kachel 'chat-tile' nicht im Bühnenbild gefunden!");
         }

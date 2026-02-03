@@ -7,6 +7,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const multer = require('multer');
 
 // Import services
 const AuthService = require('./auth-service');
@@ -14,6 +15,9 @@ const DataService = require('./data-service');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Configure multer for memory storage (we'll process and save manually)
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Create service instances
 const authService = new AuthService(process.env.JWT_SECRET);
@@ -336,7 +340,45 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
   }
 });
 
+// === THEATER SCRIPTS UPLOAD ===
 
+app.post('/api/theater/upload', authService.authenticateToken.bind(authService), upload.single('script'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Check if file is a text file
+    if (!req.file.mimetype.startsWith('text/') && req.file.mimetype !== 'application/json') {
+      return res.status(400).json({ error: 'Only text files are allowed' });
+    }
+
+    const filename = req.file.originalname.replace(/\.[^/.]+$/, ''); // Remove extension
+    const content = req.file.buffer.toString('utf-8');
+    
+    const result = await dataService.saveTheaterScript(req.user.username, filename, content);
+    
+    res.json({ 
+      success: true, 
+      message: result.message,
+      filename: filename,
+      chunkCount: result.chunkCount
+    });
+  } catch (error) {
+    console.error('Theater upload error:', error);
+    res.status(500).json({ error: error.message || 'Failed to upload theater script' });
+  }
+});
+
+app.get('/api/theater/scripts', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const scripts = await dataService.getTheaterScripts(req.user.username);
+    res.json(scripts);
+  } catch (error) {
+    console.error('Error fetching theater scripts:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch theater scripts' });
+  }
+});
 
 // Handle 404 for API routes
 app.use('/api/*', (req, res) => {

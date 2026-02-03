@@ -115,6 +115,72 @@ class DataService {
     await this.saveSharedBlogPosts(filtered);
     return { success: true };
   }
+
+  // === THEATER SCRIPTS ===
+
+  async saveTheaterScript(username, filename, content) {
+    const scriptsDir = path.join(this.dataDir, 'scripts', username);
+    try {
+      await fs.access(scriptsDir);
+    } catch {
+      await fs.mkdir(scriptsDir, { recursive: true });
+    }
+
+    const filePath = path.join(scriptsDir, `${filename}.json`);
+    
+    // Split content into ~1000 character chunks
+    const chunkSize = 1000;
+    const chunks = [];
+    for (let i = 0; i < content.length; i += chunkSize) {
+      chunks.push(content.substring(i, i + chunkSize));
+    }
+
+    const scriptData = {
+      filename: filename,
+      originalContent: content,
+      chunks: chunks,
+      chunkCount: chunks.length,
+      uploadedAt: new Date().toISOString()
+    };
+
+    await fs.writeFile(filePath, JSON.stringify(scriptData, null, 2));
+    return { success: true, chunkCount: chunks.length, message: `Script saved with ${chunks.length} chunks` };
+  }
+
+  async getTheaterScripts(username) {
+    const scriptsDir = path.join(this.dataDir, 'scripts', username);
+    try {
+      await fs.access(scriptsDir);
+      const files = await fs.readdir(scriptsDir);
+      const scripts = await Promise.all(
+        files
+          .filter(file => file.endsWith('.json'))
+          .map(async file => {
+            const filePath = path.join(scriptsDir, file);
+            const data = await fs.readFile(filePath, 'utf8');
+            const parsed = JSON.parse(data);
+            return {
+              filename: parsed.filename,
+              chunkCount: parsed.chunkCount,
+              uploadedAt: parsed.uploadedAt
+            };
+          })
+      );
+      return scripts;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async getTheaterScript(username, filename) {
+    const filePath = path.join(this.dataDir, 'scripts', username, `${filename}.json`);
+    try {
+      const data = await fs.readFile(filePath, 'utf8');
+      return JSON.parse(data);
+    } catch (error) {
+      return null;
+    }
+  }
 }
 
 module.exports = DataService;

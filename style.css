@@ -1246,3 +1246,107 @@ button:active {
     z-index: -2;
     opacity: 0.2;
 }
+
+/* THEATER UPLOAD SECTION */
+.theater-upload-section {
+    margin-top: var(--fib-spacing-3);
+    padding: var(--fib-spacing-2);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(111, 168, 220, 0.2);
+}
+
+.theater-upload-section h3 {
+    color: var(--fib-pastel-3);
+    font-size: 1.2rem;
+    margin-bottom: var(--fib-spacing-2);
+}
+
+.theater-upload-container {
+    display: flex;
+    gap: var(--fib-spacing-2);
+    align-items: center;
+    margin-bottom: var(--fib-spacing-2);
+}
+
+.theater-file-input {
+    flex: 1;
+    padding: calc(var(--fib-spacing-1) * 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--fib-pastel-3);
+    border-radius: 0.2rem;
+    color: #fff;
+    cursor: pointer;
+}
+
+.theater-upload-btn {
+    padding: calc(var(--fib-spacing-1) * 0.8) var(--fib-spacing-2);
+    background: linear-gradient(135deg, var(--fib-pastel-3), var(--fib-pastel-5));
+    color: white;
+    border: none;
+    border-radius: 0.2rem;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theater-upload-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.theater-upload-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.theater-upload-status {
+    font-size: 0.9rem;
+    margin-top: var(--fib-spacing-1);
+    min-height: 1.2rem;
+}
+
+.theater-upload-status.success {
+    color: #4ade80;
+}
+
+.theater-upload-status.error {
+    color: #f87171;
+}
+
+.theater-scripts-list {
+    margin-top: var(--fib-spacing-3);
+}
+
+.theater-scripts-list h4 {
+    color: var(--fib-pastel-3);
+    font-size: 1rem;
+    margin-bottom: var(--fib-spacing-1);
+}
+
+.theater-scripts-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.theater-scripts-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--fib-spacing-1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.2rem;
+    margin-bottom: var(--fib-spacing-1);
+}
+
+.theater-scripts-list .script-name {
+    color: #fff;
+    font-weight: 500;
+}
+
+.theater-scripts-list .script-info {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+}
