@@ -108,6 +108,25 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Chat Tile -->
+            <section id="chat-tile" class="chat-tile-section" style="display: none;">
+                <h2>AI Chat</h2>
+                <div class="chat-model-select">
+                    <select id="chatModelSelect" class="chat-model-dropdown">
+                        <option value="" disabled selected>Modell laden...</option>
+                    </select>
+                </div>
+                <div class="chat-history" id="chatHistory">
+                    <div class="chat-message system">
+                        <span class="chat-message-text">Wähle ein Modell und starte ein Gespräch...</span>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Nachricht eingeben..." class="chat-input">
+                    <button id="chatSendBtn" class="chat-send-btn">Senden</button>
+                </div>
+            </section>
         </div>
     </div>
     <script src="assets/utility-tracker.js"></script>

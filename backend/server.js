@@ -19,6 +19,9 @@ const PORT = process.env.PORT || 3001;
 const authService = new AuthService(process.env.JWT_SECRET);
 const dataService = new DataService();
 
+// Ollama API configuration
+const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
+
 // Trust proxy for zrok tunnel
 app.set('trust proxy', 1);
 
@@ -159,6 +162,144 @@ app.delete('/api/blog/posts/:id', authService.authenticateToken, async (req, res
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// === CHAT ENDPOINTS ===
+
+app.get('/api/chat/models', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+    const data = await response.json();
+    const models = data.models.map(model => ({
+      id: model.name,
+      name: model.name
+    }));
+    res.json(models);
+  } catch (error) {
+    console.error('Error fetching Ollama models:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/chat/generate', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const { model, messages } = req.body;
+    
+    if (!model || !messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Model and messages are required' });
+    }
+
+    const ollamaMessages = messages.map(msg => ({
+      role: msg.role === 'system' ? 'system' : (msg.role === 'assistant' ? 'assistant' : 'user'),
+      content: msg.text
+    }));
+
+    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: ollamaMessages,
+        stream: true
+      })
+    });
+
+    if (!ollamaResponse.ok) {
+      const errorText = await ollamaResponse.text();
+      throw new Error(`Ollama API error: ${ollamaResponse.status} - ${errorText}`);
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const reader = ollamaResponse.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(line => line.trim());
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          if (data.done) {
+            res.write('data: [DONE]\n\n');
+            break;
+          }
+          
+          if (data.message && data.message.content) {
+            const openaiFormat = {
+              choices: [{
+                delta: {
+                  content: data.message.content
+                }
+              }]
+            };
+            res.write(`data: ${JSON.stringify(openaiFormat)}\n\n`);
+          }
+        } catch (e) {
+        }
+      }
+    }
+
+    res.end();
+
+  } catch (error) {
+    console.error('Chat generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+app.post('/api/chat/generate', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const { model, messages } = req.body;
+    
+    if (!model || !messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: 'Model and messages are required' });
+    }
+
+    // Convert messages to OpenAI format
+    const openaiMessages = messages.map(msg => ({
+      role: msg.role === 'system' ? 'system' : (msg.role === 'assistant' ? 'assistant' : 'user'),
+      content: msg.text
+    }));
+
+    const stream = await openai.chat.completions.create({
+      model: model,
+      messages: openaiMessages,
+      stream: true
+    });
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Stream the response
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+  } catch (error) {
+    console.error('Chat generation error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

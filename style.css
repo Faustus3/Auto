@@ -818,6 +818,171 @@ button:active {
     color: #fff;
 }
 
+/* CHAT TILE SECTION - Kachel Design */
+.chat-tile-section {
+    margin-top: var(--fib-spacing-3);
+    margin-bottom: var(--fib-spacing-3);
+    padding: var(--fib-spacing-3);
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 0.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.6s ease;
+    border: 1px solid rgba(111, 168, 220, 0.2);
+    color: #fff;
+}
+
+.chat-tile-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-color: rgba(111, 168, 220, 0.4);
+}
+
+.chat-tile-section h2 {
+    color: var(--fib-pastel-3);
+    font-size: 1.8rem;
+    margin-bottom: var(--fib-spacing-2);
+    text-shadow: 0 0 10px rgba(111, 168, 220, 0.3);
+}
+
+.chat-model-select {
+    margin-bottom: var(--fib-spacing-2);
+}
+
+.chat-model-dropdown {
+    width: calc(100% - 22px);
+    padding: calc(var(--fib-spacing-1) * 0.8);
+    border: 1px solid var(--fib-pastel-3);
+    border-radius: 0.2rem;
+    font-size: 16px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.chat-model-dropdown:focus {
+    outline: none;
+    border-color: var(--fib-pastel-5);
+    box-shadow: 0 0 8px rgba(155, 89, 182, 0.3);
+}
+
+.chat-model-dropdown option {
+    background-color: #1a1a2e;
+    color: #fff;
+}
+
+.chat-history {
+    max-height: 300px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0.3rem;
+    padding: var(--fib-spacing-2);
+    margin-bottom: var(--fib-spacing-2);
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-history::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-history::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.chat-history::-webkit-scrollbar-thumb {
+    background: var(--fib-pastel-3);
+    border-radius: 4px;
+}
+
+.chat-message {
+    margin-bottom: var(--fib-spacing-2);
+    padding: calc(var(--fib-spacing-1) * 0.8);
+    border-radius: 0.3rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.chat-message.user {
+    background: linear-gradient(135deg, rgba(111, 168, 220, 0.2), rgba(111, 168, 220, 0.1));
+    border-left: 3px solid var(--fib-pastel-3);
+    margin-left: 10%;
+}
+
+.chat-message.assistant {
+    background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(155, 89, 182, 0.1));
+    border-left: 3px solid var(--fib-pastel-5);
+    margin-right: 10%;
+}
+
+.chat-message.system {
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid #666;
+    text-align: center;
+}
+
+.chat-message-text {
+    color: #eee;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: var(--fib-spacing-1);
+}
+
+.chat-input {
+    flex: 1;
+    padding: calc(var(--fib-spacing-1) * 0.8);
+    border: 1px solid var(--fib-pastel-3);
+    border-radius: 0.2rem;
+    font-size: 16px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s ease;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: var(--fib-pastel-5);
+    box-shadow: 0 0 8px rgba(155, 89, 182, 0.3);
+}
+
+.chat-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.chat-send-btn {
+    padding: calc(var(--fib-spacing-1) * 0.8) var(--fib-spacing-2);
+    background: linear-gradient(135deg, var(--fib-pastel-5), var(--fib-pastel-3));
+    color: white;
+    border: none;
+    border-radius: 0.2rem;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.chat-send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, var(--fib-pastel-8), var(--fib-pastel-5));
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .utility-tracker-section:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);

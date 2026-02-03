@@ -710,4 +710,189 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     window.updateNoteContent = updateNoteContent;
     window.deleteNote = deleteNote;
 
+    // --- Chat Functionality ---
+    const chatTile = document.getElementById('chat-tile');
+    const chatModelSelect = document.getElementById('chatModelSelect');
+    const chatHistory = document.getElementById('chatHistory');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    let chatMessages = [];
+    let selectedModel = null;
+    let isStreaming = false;
+
+    async function loadChatModels() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat/models`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const models = await response.json();
+                chatModelSelect.innerHTML = '<option value="" disabled selected>Modell auswählen...</option>';
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    chatModelSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading chat models:', error);
+            addChatMessage('system', 'Fehler beim Laden der Modelle.');
+        }
+    }
+
+    function addChatMessage(role, text) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-message ${role}`;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'chat-message-text';
+        textElement.textContent = text;
+        
+        messageElement.appendChild(textElement);
+        chatHistory.appendChild(messageElement);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        chatMessages.push({ role, text });
+    }
+
+    function createStreamingMessageElement(role) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-message ${role}`;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'chat-message-text';
+        textElement.textContent = '';
+        
+        messageElement.appendChild(textElement);
+        chatHistory.appendChild(messageElement);
+        
+        return { messageElement, textElement };
+    }
+
+    async function streamChatResponse(model, messages, messageElement, textElement) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat/generate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate response');
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+                        
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                                const content = parsed.choices[0].delta.content;
+                                accumulatedText += content;
+                                textElement.textContent = accumulatedText;
+                                chatHistory.scrollTop = chatHistory.scrollHeight;
+                            }
+                        } catch (e) {
+                        }
+                    }
+                }
+            }
+
+            chatMessages.push({ role: 'assistant', text: accumulatedText });
+
+        } catch (error) {
+            console.error('Error streaming response:', error);
+            textElement.textContent = 'Fehler bei der Antwort.';
+            chatMessages.push({ role: 'assistant', text: 'Fehler bei der Antwort.' });
+        }
+    }
+
+    async function sendChatMessage() {
+        const message = chatInput.value.trim();
+        if (!message || !selectedModel || isStreaming) return;
+
+        isStreaming = true;
+        chatInput.value = '';
+        chatSendBtn.disabled = true;
+
+        addChatMessage('user', message);
+
+        const { messageElement, textElement } = createStreamingMessageElement('assistant');
+
+        const messagesToSubmit = [
+            ...chatMessages.slice(-10),
+            { role: 'user', text: message }
+        ];
+
+        await streamChatResponse(selectedModel, messagesToSubmit, messageElement, textElement);
+
+        isStreaming = false;
+        chatSendBtn.disabled = false;
+        chatInput.focus();
+    }
+
+    chatModelSelect.addEventListener('change', (e) => {
+        selectedModel = e.target.value;
+        if (selectedModel) {
+            chatHistory.innerHTML = `
+                <div class="chat-message system">
+                    <span class="chat-message-text">Modell "${selectedModel}" ausgewählt. Schreibe eine Nachricht!</span>
+                </div>
+            `;
+            chatMessages = [];
+        }
+    });
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
+
+    // Show chat tile after successful login
+    const originalLoginSuccess = loginForm.addEventListener;
+    const showChatTile = () => {
+        if (chatTile) {
+            chatTile.style.display = 'block';
+            loadChatModels();
+        }
+    };
+
+    // Hook into the existing login success flow
+    const originalSubmitHandler = loginForm.onsubmit;
+    if (loginForm) {
+        loginForm.addEventListener('submit', () => {
+            setTimeout(showChatTile, 100);
+        });
+    }
+
+    // Check if already logged in (page refresh)
+    if (currentToken && chatTile) {
+        showChatTile();
+    }
+
 });
