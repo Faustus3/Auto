@@ -25,9 +25,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
 // CORS configuration
-// For development, allow all origins to prevent CORS errors
-// In production, you should restrict this to specific origins
-app.use(cors());
+// Allow all origins for zrok compatibility (URLs change dynamically)
+const corsOptions = {
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -62,26 +68,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/verify', authService.authenticateToken, (req, res) => {
   res.json({ valid: true, user: req.user });
-});
-
-// Ollama Routes
-app.post('/api/ollama/generate', async (req, res) => {
-  try {
-    const { model, prompt, stream, system, context } = req.body;
-    const result = await ollamaService.generateText(model, prompt, stream, system, context);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/ollama/status', async (req, res) => {
-  try {
-    const status = await ollamaService.checkStatus();
-    res.json(status);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // Data Routes

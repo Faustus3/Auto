@@ -18,6 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = '';
     let currentToken = '';
 
+    // Auto-detect API URL for zrok compatibility
+    // If running on zrok domain (zrok.io), use relative URLs (same origin)
+    // Otherwise, use localhost:3001 for local development
+    const isZrokDomain = window.location.hostname.includes('zrok.io');
+    const API_BASE_URL = isZrokDomain 
+        ? `${window.location.protocol}//${window.location.host}/api`
+        : 'http://localhost:3001/api';
+    
+    console.log('API Base URL:', API_BASE_URL);
+
 // --- High-Frequency Neon String Animation (CHAOS EDITION) ---
     const canvas = glCanvas;
     const gl = canvas.getContext('webgl', { antialias: true });
@@ -147,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Send login request to backend
-            const response = await fetch('http://localhost:3001/api/auth/login', {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -272,6 +282,94 @@ document.addEventListener('DOMContentLoaded', () => {
     // Notizen beim Laden anzeigen
     renderNotes();
 
+    // Admin Panel Functionality
+    async function loadPendingUsers() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/pending-users`, {
+                headers: { 
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
+            
+            if (response.ok) {
+                const pendingUsers = await response.json();
+                const pendingContainer = document.getElementById('pending-users-container');
+                
+                if (pendingUsers.length === 0) {
+                    pendingContainer.innerHTML = '<p>Keine ausstehenden Benutzeranfragen.</p>';
+                } else {
+                    pendingContainer.innerHTML = pendingUsers.map(user => `
+                        <div class="pending-user-card">
+                            <div class="user-info">
+                                <strong>${user.displayName}</strong> (@${user.username})
+                                <br><small>Registriert: ${new Date(user.createdAt).toLocaleDateString()}</small>
+                            </div>
+                            <div class="user-actions">
+                                <button onclick="approveUser('${user.id}')" class="approve-btn">Freischalten</button>
+                                <button onclick="rejectUser('${user.id}')" class="reject-btn">Ablehnen</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                console.error('Failed to load pending users');
+            }
+        } catch (error) {
+            console.error('Error loading pending users:', error);
+        }
+    }
+
+    // Make functions global for onclick handlers
+    window.approveUser = async function(userId) {
+        if (!confirm('Benutzer wirklich freischalten?')) return;
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/approve-user/${userId}`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Benutzer erfolgreich freigeschaltet!');
+                loadPendingUsers(); // Refresh the list
+            } else {
+                alert(`Fehler: ${result.error}`);
+            }
+        } catch (error) {
+            console.error('Error approving user:', error);
+            alert('Fehler beim Freischalten');
+        }
+    };
+
+    window.rejectUser = async function(userId) {
+        if (!confirm('Benutzeranfrage wirklich ablehnen?')) return;
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/reject-user/${userId}`, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Benutzeranfrage abgelehnt');
+                loadPendingUsers(); // Refresh the list
+            } else {
+                alert(`Fehler: ${result.error}`);
+            }
+        } catch (error) {
+            console.error('Error rejecting user:', error);
+            alert('Fehler beim Ablehnen');
+        }
+    };
+
     logoutButton.addEventListener('click', async () => {
         try {
             // Send logout request to backend (if needed)
@@ -317,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load user data from backend
     async function loadUserData() {
         try {
-            const response = await fetch('http://localhost:3001/api/data/keys', {
+            const response = await fetch(`${API_BASE_URL}/data/keys`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
@@ -338,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save note to backend
     async function saveNoteToBackend(note, index) {
         try {
-            const response = await fetch('http://localhost:3001/api/data/save', {
+const response = await fetch(`${API_BASE_URL}/data/save`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
@@ -361,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save blog post to backend
     async function saveBlogPostToBackend(post) {
         try {
-            const response = await fetch('http://localhost:3001/api/data/save', {
+            const response = await fetch(`${API_BASE_URL}/data/save`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
