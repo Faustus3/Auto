@@ -85,8 +85,9 @@ function startZrok() {
     zrokProcess.stdout.on('data', (data) => {
       const output = data.toString();
 
-      if (output.includes('bound to') || output.includes('forwarding')) {
-        publicUrl = ZROK_URL;
+      const urlMatch = output.match(/(https?:\/\/[^\s]+\.zrok\.io)/);
+      if (urlMatch && !publicUrl) {
+        publicUrl = urlMatch[1];
         log('\n✅ PUBLIC URL READY!', 'green');
         log(`   ${publicUrl}`, 'cyan');
         log('\n📱 Your Auto Dashboard is now accessible from anywhere!', 'green');
