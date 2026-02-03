@@ -10,8 +10,9 @@ const path = require('path');
 const SERVER_PORT = process.env.PORT || 3001;
 const BACKEND_DIR = path.join(__dirname, 'backend');
 
-// Persistent zrok URL (reserved with: zrok reserve public http://localhost:3001 --unique-name finnserver)
-const ZROK_RESERVED_URL = 'https://finnserver.share.zrok.io';
+// Persistent zrok configuration (reserved with: zrok reserve public http://localhost:3001 --unique-name finnserver)
+const ZROK_TOKEN = 'finnserver';
+const ZROK_URL = 'https://finnserver.share.zrok.io';
 
 let serverProcess = null;
 let zrokProcess = null;
@@ -73,9 +74,9 @@ function startZrok() {
   return new Promise((resolve, reject) => {
     log('\n🌐 Starting zrok tunnel...', 'cyan');
     log(`   Sharing: http://localhost:${SERVER_PORT}`, 'yellow');
-    log(`   Reserved URL: ${ZROK_RESERVED_URL}\n`, 'yellow');
+    log(`   Reserved URL: ${ZROK_URL}\n`, 'yellow');
 
-    zrokProcess = spawn('zrok', ['share', 'reserved', ZROK_RESERVED_URL], {
+    zrokProcess = spawn('zrok', ['share', 'reserved', ZROK_TOKEN], {
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
@@ -85,7 +86,7 @@ function startZrok() {
       const output = data.toString();
 
       if (output.includes('bound to') || output.includes('forwarding')) {
-        publicUrl = ZROK_RESERVED_URL;
+        publicUrl = ZROK_URL;
         log('\n✅ PUBLIC URL READY!', 'green');
         log(`   ${publicUrl}`, 'cyan');
         log('\n📱 Your Auto Dashboard is now accessible from anywhere!', 'green');
