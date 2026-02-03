@@ -169,8 +169,25 @@ app.delete('/api/blog/posts/:id', authService.authenticateToken, async (req, res
 
 app.get('/api/chat/models', authService.authenticateToken.bind(authService), async (req, res) => {
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.status} - ${response.statusText}`);
+    }
+    
     const data = await response.json();
+    
+    if (!data || !Array.isArray(data.models)) {
+      console.error('Invalid response from Ollama:', data);
+      return res.status(500).json({ error: 'Invalid response from Ollama API' });
+    }
+    
     const models = data.models.map(model => ({
       id: model.name,
       name: model.name
@@ -178,7 +195,15 @@ app.get('/api/chat/models', authService.authenticateToken.bind(authService), asy
     res.json(models);
   } catch (error) {
     console.error('Error fetching Ollama models:', error);
-    res.status(500).json({ error: error.message });
+    
+    if (error.name === 'AbortError') {
+      return res.status(503).json({ error: 'Ollama service timeout - check if Ollama is running' });
+    }
+    if (error.code === 'ECONNREFUSED' || error.cause?.code === 'ECONNREFUSED') {
+      return res.status(503).json({ error: 'Ollama service not available - check if Ollama is running on ' + OLLAMA_BASE_URL });
+    }
+    
+    res.status(500).json({ error: error.message || 'Failed to fetch Ollama models' });
   }
 });
 
@@ -195,7 +220,10 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
       content: msg.text || msg.content || ''
     }));
 
-    // Versuche Streaming-Modus
+    // Timeout for Ollama connection
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: {
@@ -205,8 +233,11 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
         model: model,
         messages: ollamaMessages,
         stream: true
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!ollamaResponse.ok) {
       const errorText = await ollamaResponse.text();
@@ -219,19 +250,29 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
 
     const reader = ollamaResponse.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = '';
+    let streamDone = false;
 
-    while (true) {
+    while (!streamDone) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(line => line.trim());
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      
+      // Keep the last (potentially incomplete) line in the buffer
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) continue;
+        
         try {
-          const data = JSON.parse(line);
+          const data = JSON.parse(trimmedLine);
+          
           if (data.done) {
             res.write('data: [DONE]\n\n');
+            streamDone = true;
             break;
           }
           
@@ -246,17 +287,51 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
             res.write(`data: ${JSON.stringify(openaiFormat)}\n\n`);
           }
         } catch (e) {
-          // Ignoriere JSON-Parse-Fehler
+          // Ignore malformed JSON lines
+          console.debug('Skipping malformed JSON line:', trimmedLine.substring(0, 50));
         }
       }
     }
 
+    // Process any remaining data in buffer
+    if (buffer.trim()) {
+      try {
+        const data = JSON.parse(buffer.trim());
+        if (!data.done && data.message?.content) {
+          const openaiFormat = {
+            choices: [{
+              delta: {
+                content: data.message.content
+              }
+            }]
+          };
+          res.write(`data: ${JSON.stringify(openaiFormat)}\n\n`);
+        }
+      } catch (e) {
+        // Ignore final buffer if malformed
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
     res.end();
 
   } catch (error) {
     console.error('Chat generation error:', error);
+    
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Das lokale Gehirn antwortet nicht.' });
+      if (error.name === 'AbortError') {
+        return res.status(503).json({ error: 'Ollama request timeout - the model may be loading or unavailable' });
+      }
+      if (error.code === 'ECONNREFUSED' || error.cause?.code === 'ECONNREFUSED') {
+        return res.status(503).json({ error: 'Ollama service not available - check if Ollama is running on ' + OLLAMA_BASE_URL });
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to generate chat response' });
+    } else {
+      // If headers already sent (streaming started), we can't send JSON error
+      res.write(`data: ${JSON.stringify({ error: error.message || 'Stream error' })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
     }
   }
 });

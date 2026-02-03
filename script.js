@@ -891,13 +891,19 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     };
 
     // Überprüfe Login-Status (auch nach Refresh)
-    const checkLoginAndShow = () => {
+    const checkLoginAndShow = async () => {
         const token = localStorage.getItem('token') || currentToken;
         if (token) {
             showChatTile();
-            // Falls andere Sektionen auch versteckt sind:
+            // Show private section and hide public sections
             if (loginSection) loginSection.style.display = 'none';
-            if (welcomeSection) welcomeSection.style.display = 'block';
+            if (welcomeSection) welcomeSection.style.display = 'none';
+            if (websiteLinkSection) websiteLinkSection.style.display = 'none';
+            if (privateFilesSection) privateFilesSection.style.display = 'block';
+            
+            // Load user data and render content after page refresh
+            await loadUserData();
+            renderBlogPosts();
         }
     };
 
