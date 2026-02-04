@@ -738,6 +738,32 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     let selectedModel = null;
     let isStreaming = false;
     let ragEnabled = false;
+
+    async function loadChatModels() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/chat/models`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const models = await response.json();
+                chatModelSelect.innerHTML = '<option value="" disabled selected>Modell auswählen...</option>';
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    chatModelSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading chat models:', error);
+            addChatMessage('system', 'Fehler beim Laden der Modelle.');
+        }
+    }
     const ragToggle = document.getElementById('ragToggle');
     
     if (ragToggle) {
