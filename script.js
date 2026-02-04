@@ -722,60 +722,113 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     let chatMessages = [];
     let selectedModel = null;
     let isStreaming = false;
+    let ragEnabled = false;
+    const ragToggle = document.getElementById('ragToggle');
+    
+    if (ragToggle) {
+        ragToggle.addEventListener('change', (e) => {
+            ragEnabled = e.target.checked;
+            console.log(`[RAG] Knowledge search ${ragEnabled ? 'enabled' : 'disabled'}`);
+        });
+    }
 
-    async function loadChatModels() {
+    // === WEB SCRAPE FUNCTIONALITY ===
+    let scrapeEnabled = false;
+    const scrapeToggle = document.getElementById('scrapeToggle');
+    const scrapeInputContainer = document.getElementById('scrapeInputContainer');
+    const scrapeUrlInput = document.getElementById('scrapeUrlInput');
+    const scrapeBtn = document.getElementById('scrapeBtn');
+    const summarizeBtn = document.getElementById('summarizeBtn');
+    const scrapeStatus = document.getElementById('scrapeStatus');
+
+    if (scrapeToggle) {
+        scrapeToggle.addEventListener('change', (e) => {
+            scrapeEnabled = e.target.checked;
+            scrapeInputContainer.style.display = scrapeEnabled ? 'flex' : 'none';
+            console.log(`[Scrape] Web scraping ${scrapeEnabled ? 'enabled' : 'disabled'}`);
+        });
+    }
+
+    // === AGENTIC WEB SEARCH TOGGLE ===
+    let webSearchEnabled = false;
+    const webSearchToggle = document.getElementById('webSearchToggle');
+    
+    if (webSearchToggle) {
+        webSearchToggle.addEventListener('change', (e) => {
+            webSearchEnabled = e.target.checked;
+            console.log(`[WebAgent] Automatic web search ${webSearchEnabled ? 'enabled' : 'disabled'}`);
+        });
+    }
+
+    async function scrapeUrl(url, summarize = false) {
+        const endpoint = summarize ? '/api/scrape/summary' : '/api/scrape';
+        
+        scrapeBtn.disabled = true;
+        summarizeBtn.disabled = true;
+        scrapeStatus.textContent = 'Scraping...';
+        scrapeStatus.className = 'scrape-status loading';
+
         try {
-            const response = await fetch(`${API_BASE_URL}/chat/models`, {
-                method: 'GET',
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ url })
             });
 
-            if (response.ok) {
-                const models = await response.json();
-                chatModelSelect.innerHTML = '<option value="" disabled selected>Modell auswählen...</option>';
-                models.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model.id;
-                    option.textContent = model.name;
-                    chatModelSelect.appendChild(option);
-                });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Scrape failed');
             }
+
+            const data = await response.json();
+
+            if (summarize && data.summary) {
+                const summaryMsg = addChatMessage('system', `📰 **${data.title}**\n\n**Summary:**\n${data.summary}\n\n[Original content available]`);
+                scrapeStatus.textContent = 'Summary generated!';
+                scrapeStatus.className = 'scrape-status success';
+            } else {
+                const contentPreview = data.content.substring(0, 500) + (data.content.length > 500 ? '...' : '');
+                const scrapeMsg = addChatMessage('system', `📰 **${data.title}**\n\n${contentPreview}\n\n[Full content: ${data.contentLength} characters]`);
+                scrapeStatus.textContent = `Scraped ${data.contentLength} characters`;
+                scrapeStatus.className = 'scrape-status success';
+            }
+            
+            chatHistory.scrollTop = chatHistory.scrollHeight;
         } catch (error) {
-            console.error('Error loading chat models:', error);
-            addChatMessage('system', 'Fehler beim Laden der Modelle.');
+            console.error('Scrape error:', error);
+            scrapeStatus.textContent = `Error: ${error.message}`;
+            scrapeStatus.className = 'scrape-status error';
+        } finally {
+            scrapeBtn.disabled = false;
+            summarizeBtn.disabled = false;
         }
     }
 
-    function addChatMessage(role, text) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `chat-message ${role}`;
-        
-        const textElement = document.createElement('span');
-        textElement.className = 'chat-message-text';
-        textElement.textContent = text;
-        
-        messageElement.appendChild(textElement);
-        chatHistory.appendChild(messageElement);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        
-        chatMessages.push({ role, text });
+    if (scrapeBtn) {
+        scrapeBtn.addEventListener('click', () => {
+            const url = scrapeUrlInput.value.trim();
+            if (url) {
+                scrapeUrl(url, false);
+            } else {
+                scrapeStatus.textContent = 'Please enter a URL';
+                scrapeStatus.className = 'scrape-status error';
+            }
+        });
     }
 
-    function createStreamingMessageElement(role) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `chat-message ${role}`;
-        
-        const textElement = document.createElement('span');
-        textElement.className = 'chat-message-text';
-        textElement.textContent = '';
-        
-        messageElement.appendChild(textElement);
-        chatHistory.appendChild(messageElement);
-        
-        return { messageElement, textElement };
+    if (summarizeBtn) {
+        summarizeBtn.addEventListener('click', () => {
+            const url = scrapeUrlInput.value.trim();
+            if (url) {
+                scrapeUrl(url, true);
+            } else {
+                scrapeStatus.textContent = 'Please enter a URL';
+                scrapeStatus.className = 'scrape-status error';
+            }
+        });
     }
 
     async function streamChatResponse(model, messages, messageElement, textElement) {
@@ -786,7 +839,18 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                     'Authorization': `Bearer ${currentToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages })
+                body: JSON.stringify({ 
+                    model, 
+                    messages,
+                    useRag: ragEnabled,
+                    useWebSearch: webSearchEnabled,
+                    ragOptions: {
+                        searchNotes: true,
+                        searchBlogPosts: true,
+                        searchScripts: true,
+                        maxResults: 5
+                    }
+                })
             });
 
             if (!response.ok) {
@@ -849,6 +913,16 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             { role: 'user', text: message }
         ];
 
+        if (ragEnabled) {
+            addChatMessage('system', '🔍 Suche in lokalem Wissen...');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        if (webSearchEnabled) {
+            addChatMessage('system', '🌐 Analysiere ob Web-Suche benötigt wird...');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
         await streamChatResponse(selectedModel, messagesToSubmit, messageElement, textElement);
 
         isStreaming = false;
@@ -876,13 +950,13 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         }
     });
 
-    // === THEATER SCRIPT UPLOAD ===
-    const theaterFileInput = document.getElementById('theaterFileInput');
-    const theaterUploadBtn = document.getElementById('theaterUploadBtn');
-    const theaterUploadStatus = document.getElementById('theaterUploadStatus');
-    const theaterScriptsList = document.getElementById('theaterScriptsList');
+    // === WISSEN UPLOAD ===
+    const wissenFileInput = document.getElementById('wissenFileInput');
+    const wissenUploadBtn = document.getElementById('wissenUploadBtn');
+    const wissenUploadStatus = document.getElementById('wissenUploadStatus');
+    const wissenList = document.getElementById('wissenList');
 
-    async function loadTheaterScripts() {
+    async function loadWissen() {
         try {
             const response = await fetch(`${API_BASE_URL}/theater/scripts`, {
                 method: 'GET',
@@ -894,32 +968,32 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
             if (response.ok) {
                 const scripts = await response.json();
-                theaterScriptsList.innerHTML = '';
+                wissenList.innerHTML = '';
                 scripts.forEach(script => {
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <span class="script-name">${script.filename}</span>
                         <span class="script-info">(${script.chunkCount} Abschnitte)</span>
                     `;
-                    theaterScriptsList.appendChild(li);
+                    wissenList.appendChild(li);
                 });
             }
         } catch (error) {
-            console.error('Error loading theater scripts:', error);
+            console.error('Error loading wissen:', error);
         }
     }
 
-    async function uploadTheaterScript() {
-        const file = theaterFileInput.files[0];
+    async function uploadWissen() {
+        const file = wissenFileInput.files[0];
         if (!file) {
-            theaterUploadStatus.textContent = 'Bitte wähle eine Datei aus.';
-            theaterUploadStatus.className = 'theater-upload-status error';
+            wissenUploadStatus.textContent = 'Bitte wähle eine Datei aus.';
+            wissenUploadStatus.className = 'wissen-upload-status error';
             return;
         }
 
-        theaterUploadBtn.disabled = true;
-        theaterUploadStatus.textContent = 'Wird hochgeladen...';
-        theaterUploadStatus.className = 'theater-upload-status';
+        wissenUploadBtn.disabled = true;
+        wissenUploadStatus.textContent = 'Wird hochgeladen...';
+        wissenUploadStatus.className = 'wissen-upload-status';
 
         const formData = new FormData();
         formData.append('script', file);
@@ -935,25 +1009,25 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
             if (response.ok) {
                 const result = await response.json();
-                theaterUploadStatus.textContent = `Erfolg! ${result.chunkCount} Abschnitte gespeichert.`;
-                theaterUploadStatus.className = 'theater-upload-status success';
-                theaterFileInput.value = '';
-                loadTheaterScripts();
+                wissenUploadStatus.textContent = `Erfolg! ${result.chunkCount} Abschnitte gespeichert.`;
+                wissenUploadStatus.className = 'wissen-upload-status success';
+                wissenFileInput.value = '';
+                loadWissen();
             } else {
                 const error = await response.json();
-                theaterUploadStatus.textContent = error.error || 'Upload fehlgeschlagen.';
-                theaterUploadStatus.className = 'theater-upload-status error';
+                wissenUploadStatus.textContent = error.error || 'Upload fehlgeschlagen.';
+                wissenUploadStatus.className = 'wissen-upload-status error';
             }
         } catch (error) {
             console.error('Upload error:', error);
-            theaterUploadStatus.textContent = 'Netzwerkfehler beim Upload.';
-            theaterUploadStatus.className = 'theater-upload-status error';
+            wissenUploadStatus.textContent = 'Netzwerkfehler beim Upload.';
+            wissenUploadStatus.className = 'wissen-upload-status error';
         } finally {
-            theaterUploadBtn.disabled = false;
+            wissenUploadBtn.disabled = false;
         }
     }
 
-    theaterUploadBtn.addEventListener('click', uploadTheaterScript);
+    wissenUploadBtn.addEventListener('click', uploadWissen);
 
     // === CHAT-KACHEL FUNKTIONALITÄT ===
     
@@ -964,7 +1038,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             chatTileElement.style.setProperty('display', 'block', 'important');
             console.log("Theater-Log: Chat-Kachel Vorhang auf!");
             loadChatModels(); // Lädt Modelle von deinem lokalen Gehirn
-            loadTheaterScripts(); // Lädt gespeicherte Theaterstücke
+            loadWissen(); // Lädt gespeichertes Wissen
         } else {
             console.error("Theater-Log: Kachel 'chat-tile' nicht im Bühnenbild gefunden!");
         }

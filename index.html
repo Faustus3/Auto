@@ -117,6 +117,49 @@
                         <option value="" disabled selected>Modell laden...</option>
                     </select>
                 </div>
+                
+                <div class="chat-toggles-container">
+                    <div class="chat-rag-toggle">
+                        <label class="rag-toggle-label">
+                            <input type="checkbox" id="ragToggle" class="rag-toggle-checkbox">
+                            <span class="rag-toggle-switch"></span>
+                            <div class="rag-toggle-right">
+                                <span class="rag-toggle-text">Semantische Suche</span>
+                                <span class="rag-toggle-hint">ChromaDB + Ollama Embeddings</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="chat-scrape-toggle">
+                        <label class="rag-toggle-label">
+                            <input type="checkbox" id="scrapeToggle" class="rag-toggle-checkbox">
+                            <span class="rag-toggle-switch scrape-switch"></span>
+                            <div class="rag-toggle-right">
+                                <span class="rag-toggle-text">Manueller Web Scraper</span>
+                                <span class="rag-toggle-hint">URLs manuell eingeben</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="chat-websearch-toggle">
+                        <label class="rag-toggle-label">
+                            <input type="checkbox" id="webSearchToggle" class="rag-toggle-checkbox">
+                            <span class="rag-toggle-switch websearch-switch"></span>
+                            <div class="rag-toggle-right">
+                                <span class="rag-toggle-text">Automatische Web-Suche</span>
+                                <span class="rag-toggle-hint">Agent durchsucht das Web bei Bedarf</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="scrape-input-container" id="scrapeInputContainer" style="display: none;">
+                    <input type="text" id="scrapeUrlInput" placeholder="URL eingeben..." class="scrape-url-input">
+                    <button id="scrapeBtn" class="scrape-btn">Scrapen</button>
+                    <button id="summarizeBtn" class="scrape-btn summarize-btn">Zusammenfassen</button>
+                </div>
+                <div id="scrapeStatus" class="scrape-status"></div>
+                
                 <div class="chat-history" id="chatHistory">
                     <div class="chat-message system">
                         <span class="chat-message-text">Wähle ein Modell und starte ein Gespräch...</span>
@@ -127,17 +170,17 @@
                     <button id="chatSendBtn" class="chat-send-btn">Senden</button>
                 </div>
                 
-                <!-- Theater Script Upload -->
-                <div class="theater-upload-section">
-                    <h3>Theaterstück hochladen</h3>
-                    <div class="theater-upload-container">
-                        <input type="file" id="theaterFileInput" accept=".txt,.json,.md" class="theater-file-input">
-                        <button id="theaterUploadBtn" class="theater-upload-btn">Hochladen</button>
+                <!-- Wissen Upload -->
+                <div class="wissen-upload-section">
+                    <h3>Wissen hochladen</h3>
+                    <div class="wissen-upload-container">
+                        <input type="file" id="wissenFileInput" accept=".txt,.json,.md" class="wissen-file-input">
+                        <button id="wissenUploadBtn" class="wissen-upload-btn">Hochladen</button>
                     </div>
-                    <div id="theaterUploadStatus" class="theater-upload-status"></div>
-                    <div class="theater-scripts-list">
-                        <h4>Gespeicherte Stücke</h4>
-                        <ul id="theaterScriptsList"></ul>
+                    <div id="wissenUploadStatus" class="wissen-upload-status"></div>
+                    <div class="wissen-list">
+                        <h4>Gespeichertes Wissen</h4>
+                        <ul id="wissenList"></ul>
                     </div>
                 </div>
             </section>
