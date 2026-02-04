@@ -144,6 +144,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     requestAnimationFrame(render);
 
+    // === CHAT-KACHEL FUNKTIONALITÄT ===
+    
+    // Function to show chat tile (hoisted for access before declaration)
+    function showChatTile() {
+        const chatTileElement = document.getElementById('chat-tile');
+        if (chatTileElement) {
+            chatTileElement.style.setProperty('display', 'block', 'important');
+            console.log("[Chat] Chat-Kachel aktiviert!");
+            loadChatModels();
+            loadWissen();
+        } else {
+            console.error("[Chat] Kachel 'chat-tile' nicht gefunden!");
+        }
+    }
+
     // --- Login Functionality ---
     // Automatisches Ausfüllen für Debugging (optional, aber hilfreich)
     // document.getElementById('username').value = 'Finn';
@@ -1029,37 +1044,21 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     wissenUploadBtn.addEventListener('click', uploadWissen);
 
-    // === CHAT-KACHEL FUNKTIONALITÄT ===
+    // === CHECK LOGIN STATUS ON LOAD ===
     
-    // Verbesserte Funktion zum Anzeigen der Kachel
-    const showChatTile = () => {
-        const chatTileElement = document.getElementById('chat-tile');
-        if (chatTileElement) {
-            chatTileElement.style.setProperty('display', 'block', 'important');
-            console.log("Theater-Log: Chat-Kachel Vorhang auf!");
-            loadChatModels(); // Lädt Modelle von deinem lokalen Gehirn
-            loadWissen(); // Lädt gespeichertes Wissen
-        } else {
-            console.error("Theater-Log: Kachel 'chat-tile' nicht im Bühnenbild gefunden!");
-        }
-    };
-
     // Überprüfe Login-Status (auch nach Refresh)
-    const checkLoginAndShow = async () => {
-        const token = localStorage.getItem('token') || currentToken;
+    function checkLoginAndShow() {
+        const token = localStorage.getItem('token');
         if (token) {
             showChatTile();
-            // Show private section and hide public sections
             if (loginSection) loginSection.style.display = 'none';
             if (welcomeSection) welcomeSection.style.display = 'none';
             if (websiteLinkSection) websiteLinkSection.style.display = 'none';
             if (privateFilesSection) privateFilesSection.style.display = 'block';
-            
-            // Load user data and render content after page refresh
-            await loadUserData();
+            loadUserData();
             renderBlogPosts();
         }
-    };
+    }
 
     // Initialer Check beim Laden der Seite
     checkLoginAndShow();
