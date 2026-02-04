@@ -764,6 +764,36 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             addChatMessage('system', 'Fehler beim Laden der Modelle.');
         }
     }
+
+    function addChatMessage(role, text) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-message ${role}`;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'chat-message-text';
+        textElement.textContent = text;
+        
+        messageElement.appendChild(textElement);
+        chatHistory.appendChild(messageElement);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        chatMessages.push({ role, text });
+        return messageElement;
+    }
+
+    function createStreamingMessageElement(role) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `chat-message ${role}`;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'chat-message-text';
+        textElement.textContent = '';
+        
+        messageElement.appendChild(textElement);
+        chatHistory.appendChild(messageElement);
+        
+        return { messageElement, textElement };
+    }
     const ragToggle = document.getElementById('ragToggle');
     
     if (ragToggle) {
