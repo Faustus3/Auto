@@ -18,24 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = '';
     let currentToken = '';
 
-    // Auto-detect API URL for zrok compatibility
-    // Zrok tunnel for backend: https://finnserver.share.zrok.io
-    const isZrokDomain = window.location.hostname.includes('zrok.io') ||
-        window.location.hostname.includes('sohaltweil.de');
-    const isLocalhost = window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1';
-
-    let API_BASE_URL;
-    if (isZrokDomain) {
-        // For zrok/public domains, use the same origin
-        API_BASE_URL = `${window.location.origin}/api`;
-    } else if (isLocalhost) {
-        // For local development, use zrok tunnel to access backend
-        API_BASE_URL = 'https://finnserver.share.zrok.io/api';
-    } else {
-        // Default fallback - same origin
-        API_BASE_URL = `${window.location.origin}/api`;
-    }
+    // ALWAYS use zrok tunnel for backend - hardcoded for reliability
+    // This ensures the frontend always connects through zrok regardless of where it's hosted
+    const API_BASE_URL = 'https://finnserver.share.zrok.io/api';
 
     console.log('API Base URL:', API_BASE_URL);
     console.log('Hostname:', window.location.hostname);

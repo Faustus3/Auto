@@ -135,8 +135,8 @@ function initWebGLAnimation() {
 class AuthService {
     constructor() {
         this.currentToken = null;
-        // Make API endpoint configurable - defaults to localhost for development
-        this.apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3001/api';
+        // ALWAYS use zrok tunnel for backend - hardcoded for reliability
+        this.apiBaseUrl = 'https://finnserver.share.zrok.io/api';
     }
 
     async login(username, password) {
