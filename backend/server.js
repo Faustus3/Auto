@@ -305,11 +305,11 @@ Use this knowledge to answer the user's questions. If the knowledge is relevant,
       try {
         // Keywords that suggest current information is needed
         const currentInfoKeywords = [
-          'news', 'latest', 'recent', 'current', 'today', 'this week',
+          'news', 'latest', 'recent', 'current', 'today', 'this week', 'date',
           '2024', '2025', '2026', 'price', 'stock', 'weather', 'score',
           'who is', 'what is the', 'where can i find', 'how do i',
           'tutorial', 'documentation', 'api', 'official', 'website',
-          'can you find out'
+          'can you find out', 'what day', 'what time', 'current date'
         ];
 
         const needsWebSearch = currentInfoKeywords.some(keyword => 
@@ -388,7 +388,11 @@ Use this up-to-date web information to provide accurate, current answers. Cite r
       body: JSON.stringify({
         model: model,
         messages: ollamaMessages,
-        stream: true
+        stream: true,
+        options: {
+          num_predict: 2048,
+          temperature: 0.7
+        }
       }),
       signal: controller.signal
     });
