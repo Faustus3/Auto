@@ -20,11 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-detect API URL for zrok compatibility
     // Zrok tunnel for backend: https://finnserver.share.zrok.io
-    const isZrokDomain = window.location.hostname.includes('zrok.io') || 
-                         window.location.hostname.includes('sohaltweil.de');
-    const isLocalhost = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1';
-    
+    const isZrokDomain = window.location.hostname.includes('zrok.io') ||
+        window.location.hostname.includes('sohaltweil.de');
+    const isLocalhost = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
+
     let API_BASE_URL;
     if (isZrokDomain) {
         // For zrok/public domains, use the same origin
@@ -36,20 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Default fallback - same origin
         API_BASE_URL = `${window.location.origin}/api`;
     }
-    
+
     console.log('API Base URL:', API_BASE_URL);
     console.log('Hostname:', window.location.hostname);
     console.log('Origin:', window.location.origin);
 
-// --- High-Frequency Neon String Animation (CHAOS EDITION) ---
+    // --- High-Frequency Neon String Animation (CHAOS EDITION) ---
     const canvas = glCanvas;
     const gl = canvas.getContext('webgl', { antialias: true });
 
     if (!gl) return;
 
     const vs = `attribute vec2 p; void main(){gl_Position=vec4(p,0,1);}`;
-    
-  const fs = `
+
+    const fs = `
         precision highp float;
         uniform float u_time;
         uniform vec2 u_res;
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gl.useProgram(program);
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
     const pLoc = gl.getAttribLocation(program, 'p');
     gl.enableVertexAttribArray(pLoc);
     gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(render);
 
     // === CHAT-KACHEL FUNKTIONALITÄT ===
-    
+
     // Function to show chat tile (hoisted for access before declaration)
     function showChatTile() {
         const chatTileElement = document.getElementById('chat-tile');
@@ -203,11 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentUser = username;
                 currentToken = data.token;
-                
+
                 // Store token in localStorage for persistence
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('username', username);
-                
+
                 loginMessage.textContent = 'Anmeldung erfolgreich!';
                 loginMessage.className = 'message success';
                 welcomeSection.style.display = 'none';
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         return noteElement;
     }
-    
+
     function renderNotes() {
         notesContainer.innerHTML = '';
         notes.forEach((note, index) => {
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             notesContainer.appendChild(noteElement);
         });
     }
-    
+
     function addNote() {
         const title = prompt('Notiz-Titel:');
         if (title) {
@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderNotes();
         }
     }
-    
+
     async function updateNoteTitle(index, newTitle) {
         notes[index].title = newTitle;
         localStorage.setItem('finn-notes', JSON.stringify(notes));
@@ -297,10 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderNotes();
         }
     }
-    
+
     // Event Listener für Notiz-Button
     addNoteBtn.addEventListener('click', addNote);
-    
+
     // Notizen beim Laden anzeigen
     renderNotes();
 
@@ -308,15 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadPendingUsers() {
         try {
             const response = await fetch(`${API_BASE_URL}/admin/pending-users`, {
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${currentToken}`
                 }
             });
-            
+
             if (response.ok) {
                 const pendingUsers = await response.json();
                 const pendingContainer = document.getElementById('pending-users-container');
-                
+
                 if (pendingUsers.length === 0) {
                     pendingContainer.innerHTML = '<p>Keine ausstehenden Benutzeranfragen.</p>';
                 } else {
@@ -342,19 +342,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Make functions global for onclick handlers
-    window.approveUser = async function(userId) {
+    window.approveUser = async function (userId) {
         if (!confirm('Benutzer wirklich freischalten?')) return;
-        
+
         try {
             const response = await fetch(`${API_BASE_URL}/admin/approve-user/${userId}`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${currentToken}`
                 }
             });
-            
+
             const result = await response.json();
-            
+
             if (response.ok) {
                 alert('Benutzer erfolgreich freigeschaltet!');
                 loadPendingUsers(); // Refresh the list
@@ -367,19 +367,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.rejectUser = async function(userId) {
+    window.rejectUser = async function (userId) {
         if (!confirm('Benutzeranfrage wirklich ablehnen?')) return;
-        
+
         try {
             const response = await fetch(`${API_BASE_URL}/admin/reject-user/${userId}`, {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Authorization': `Bearer ${currentToken}`
                 }
             });
-            
+
             const result = await response.json();
-            
+
             if (response.ok) {
                 alert('Benutzeranfrage abgelehnt');
                 loadPendingUsers(); // Refresh the list
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (utilityTracker) {
                 utilityTracker.style.display = 'none';
             }
-            
+
             // Hide chat tile on logout
             const chatTile = document.getElementById('chat-tile');
             if (chatTile) {
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Logout error:', error);
         }
     });
-    
+
     // --- Blog Functionality ---
     const addBlogBtn = document.querySelector('.add-blog-btn');
     const toggleBlogViewBtn = document.querySelector('.toggle-blog-view');
@@ -488,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save note to backend
     async function saveNoteToBackend(note, index) {
         try {
-const response = await fetch(`${API_BASE_URL}/data/save`, {
+            const response = await fetch(`${API_BASE_URL}/data/save`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
@@ -585,7 +585,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         isEditingBlog = false;
         editingBlogId = null;
     });
-    
+
     // Blog-Editor ausblenden
     cancelBlogBtn.addEventListener('click', () => {
         blogEditor.style.display = 'none';
@@ -596,7 +596,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         isEditingBlog = false;
         editingBlogId = null;
     });
-    
+
     // Blog-Artikel speichern
     saveBlogBtn.addEventListener('click', async () => {
         const title = blogTitleInput.value.trim();
@@ -645,51 +645,51 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         isEditingBlog = false;
         editingBlogId = null;
     });
-    
+
     // Blog-Artikel rendern
     function renderBlogPosts() {
         blogPostsContainer.innerHTML = '';
-        
+
         let postsToShow = blogPosts;
-        
+
         // Suche anwenden
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
-            postsToShow = postsToShow.filter(post => 
+            postsToShow = postsToShow.filter(post =>
                 post.title.toLowerCase().includes(query) ||
                 post.content.toLowerCase().includes(query) ||
                 post.tags.some(tag => tag.toLowerCase().includes(query)) ||
                 post.author.toLowerCase().includes(query)
             );
         }
-        
+
         // Begrenzung anwenden
         if (!showAllPosts) {
             postsToShow = postsToShow.slice(0, 3);
         }
-        
+
         if (postsToShow.length === 0) {
-            const message = searchQuery ? 
-                'Keine Artikel gefunden, die Ihrer Suche entsprechen.' : 
+            const message = searchQuery ?
+                'Keine Artikel gefunden, die Ihrer Suche entsprechen.' :
                 'Noch keine Blog-Artikel vorhanden.';
             blogPostsContainer.innerHTML = `<p style="text-align: center; color: #777; font-style: italic;">${message}</p>`;
             return;
         }
-        
+
         postsToShow.forEach((post, index) => {
             const postElement = createBlogPostElement(post, index);
             blogPostsContainer.appendChild(postElement);
         });
     }
-    
+
     // Blog-Artikel-Element erstellen
     function createBlogPostElement(post, index) {
         const postElement = document.createElement('div');
         postElement.className = 'blog-post';
-        
+
         const tagsHtml = post.tags.map(tag => `<span class="blog-tag">${tag}</span>`).join('');
         const authorDisplay = post.authorDisplayName || post.author;
-        
+
         postElement.innerHTML = `
             <h3>${post.title}</h3>
             <p>${post.content}</p>
@@ -705,48 +705,48 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                 <button class="delete-blog-btn" onclick="deleteBlogPost('${post.id}')">Löschen</button>
             </div>
         `;
-        
+
         return postElement;
     }
-    
+
     // Blog-Artikel bearbeiten
-    window.editBlogPost = function(postId) {
+    window.editBlogPost = function (postId) {
         const postIndex = blogPosts.findIndex(post => post.id === postId);
         if (postIndex === -1) return;
-        
+
         const post = blogPosts[postIndex];
         blogTitleInput.value = post.title;
         blogContentInput.value = post.content;
         blogTagsInput.value = post.tags.join(', ');
-        
+
         blogEditor.style.display = 'block';
         addBlogBtn.style.display = 'none';
         isEditingBlog = true;
         editingBlogId = postId;
     };
-    
+
     // Blog-Artikel löschen
-    window.deleteBlogPost = async function(postId) {
+    window.deleteBlogPost = async function (postId) {
         if (confirm('Blog-Artikel wirklich löschen?')) {
             blogPosts = blogPosts.filter(post => post.id !== postId);
             await deleteBlogPostOnBackend(postId);
             renderBlogPosts();
         }
     };
-    
+
     // Blog-Suche
     blogSearchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.trim();
         renderBlogPosts();
     });
-    
+
     // Blog-Ansicht umschalten
     toggleBlogViewBtn.addEventListener('click', () => {
         showAllPosts = !showAllPosts;
         toggleBlogViewBtn.textContent = showAllPosts ? 'Neueste Artikel anzeigen' : 'Alle Artikel anzeigen';
         renderBlogPosts();
     });
-    
+
     // Globale Funktionen für contenteditable
     window.updateNoteTitle = updateNoteTitle;
     window.updateNoteContent = updateNoteContent;
@@ -765,10 +765,10 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     async function loadChatModels(retryCount = 0) {
         const maxRetries = 3;
-        
+
         try {
             console.log('[Chat] Loading models from:', `${API_BASE_URL}/chat/models`);
-            
+
             const response = await fetch(`${API_BASE_URL}/chat/models`, {
                 method: 'GET',
                 headers: {
@@ -780,9 +780,9 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             if (response.ok) {
                 const models = await response.json();
                 console.log('[Chat] Loaded', models.length, 'models');
-                
+
                 chatModelSelect.innerHTML = '<option value="" disabled selected>Modell auswählen...</option>';
-                
+
                 if (models.length === 0) {
                     const option = document.createElement('option');
                     option.value = '';
@@ -805,14 +805,14 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             }
         } catch (error) {
             console.error('[Chat] Error loading models:', error);
-            
+
             if (retryCount < maxRetries) {
                 console.log(`[Chat] Retrying model load (${retryCount + 1}/${maxRetries})...`);
                 setTimeout(() => loadChatModels(retryCount + 1), 2000);
             } else {
                 chatModelSelect.innerHTML = '<option value="" disabled selected>Fehler beim Laden</option>';
                 addChatMessage('system', `❌ Fehler beim Laden der Modelle: ${error.message}. Bitte prüfe, ob Ollama läuft.`);
-                
+
                 // Add retry button
                 const retryBtn = document.createElement('button');
                 retryBtn.textContent = '🔄 Erneut versuchen';
@@ -830,15 +830,15 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     function addChatMessage(role, text) {
         const messageElement = document.createElement('div');
         messageElement.className = `chat-message ${role}`;
-        
+
         const textElement = document.createElement('span');
         textElement.className = 'chat-message-text';
         textElement.textContent = text;
-        
+
         messageElement.appendChild(textElement);
         chatHistory.appendChild(messageElement);
         chatHistory.scrollTop = chatHistory.scrollHeight;
-        
+
         chatMessages.push({ role, text });
         return messageElement;
     }
@@ -846,18 +846,18 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     function createStreamingMessageElement(role) {
         const messageElement = document.createElement('div');
         messageElement.className = `chat-message ${role}`;
-        
+
         const textElement = document.createElement('span');
         textElement.className = 'chat-message-text';
         textElement.textContent = '';
-        
+
         messageElement.appendChild(textElement);
         chatHistory.appendChild(messageElement);
-        
+
         return { messageElement, textElement };
     }
     const ragToggle = document.getElementById('ragToggle');
-    
+
     if (ragToggle) {
         ragToggle.addEventListener('change', (e) => {
             ragEnabled = e.target.checked;
@@ -885,7 +885,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     // === AGENTIC WEB SEARCH TOGGLE ===
     let webSearchEnabled = false;
     const webSearchToggle = document.getElementById('webSearchToggle');
-    
+
     if (webSearchToggle) {
         webSearchToggle.addEventListener('change', (e) => {
             webSearchEnabled = e.target.checked;
@@ -895,7 +895,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     async function scrapeUrl(url, summarize = false) {
         const endpoint = summarize ? '/scrape/summary' : '/scrape';
-        
+
         scrapeBtn.disabled = true;
         summarizeBtn.disabled = true;
         scrapeStatus.textContent = 'Scraping...';
@@ -928,7 +928,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                 scrapeStatus.textContent = `Scraped ${data.contentLength} characters`;
                 scrapeStatus.className = 'scrape-status success';
             }
-            
+
             chatHistory.scrollTop = chatHistory.scrollHeight;
         } catch (error) {
             console.error('Scrape error:', error);
@@ -967,15 +967,15 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     async function streamChatResponse(model, messages, messageElement, textElement) {
         try {
             console.log('[Chat] Sending request to:', `${API_BASE_URL}/chat/generate`);
-            
+
             const response = await fetch(`${API_BASE_URL}/chat/generate`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    model, 
+                body: JSON.stringify({
+                    model,
                     messages,
                     useRag: ragEnabled,
                     useWebSearch: webSearchEnabled,
@@ -991,7 +991,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 const errorMsg = errorData.error || `HTTP ${response.status}`;
-                
+
                 if (response.status === 503) {
                     throw new Error(`Ollama nicht erreichbar: ${errorMsg}. Bitte prüfe, ob Ollama läuft.`);
                 } else if (response.status === 401) {
@@ -1017,7 +1017,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
                         if (data === '[DONE]') continue;
-                        
+
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
@@ -1050,7 +1050,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             console.error('[Chat] Error streaming response:', error);
             textElement.textContent = `❌ Fehler: ${error.message}`;
             chatMessages.push({ role: 'assistant', text: `❌ Fehler: ${error.message}` });
-            
+
             // If it's an auth error, clear the token
             if (error.message.includes('Sitzung abgelaufen') || error.message.includes('401')) {
                 localStorage.removeItem('token');
@@ -1062,18 +1062,18 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     async function sendChatMessage() {
         const message = chatInput.value.trim();
-        
+
         if (!message) {
             console.log('[Chat] Empty message, ignoring');
             return;
         }
-        
+
         if (!selectedModel) {
             addChatMessage('system', '⚠️ Bitte wähle zuerst ein Modell aus dem Dropdown-Menü aus!');
             chatModelSelect.focus();
             return;
         }
-        
+
         if (isStreaming) {
             console.log('[Chat] Already streaming, ignoring');
             return;
@@ -1091,7 +1091,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
         const validMessages = chatMessages
             .filter(m => m.role === 'user' || m.role === 'assistant')
             .slice(-10);
-        
+
         const messagesToSubmit = [
             ...validMessages,
             { role: 'user', text: message }
@@ -1214,12 +1214,12 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     wissenUploadBtn.addEventListener('click', uploadWissen);
 
     // === CHECK LOGIN STATUS ON LOAD ===
-    
+
     // Überprüfe Login-Status (auch nach Refresh)
     async function checkLoginAndShow() {
         const token = localStorage.getItem('token');
         const storedUsername = localStorage.getItem('username');
-        
+
         if (token) {
             // Verify token is still valid
             try {
@@ -1228,23 +1228,23 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                
+
                 if (response.ok) {
                     // Token is valid, restore session
                     currentToken = token;
                     currentUser = storedUsername || '';
-                    
+
                     showChatTile();
                     if (loginSection) loginSection.style.display = 'none';
                     if (welcomeSection) welcomeSection.style.display = 'none';
                     if (websiteLinkSection) websiteLinkSection.style.display = 'none';
                     if (privateFilesSection) privateFilesSection.style.display = 'block';
-                    
+
                     const utilityTracker = document.getElementById('utility-tracker');
                     if (utilityTracker) {
                         utilityTracker.style.display = 'block';
                     }
-                    
+
                     await loadUserData();
                     renderBlogPosts();
                     console.log('[Auth] Session restored from localStorage');
