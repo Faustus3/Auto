@@ -8,7 +8,9 @@ const path = require('path');
 
 class DataService {
   constructor() {
-    this.dataDir = path.join(__dirname, '../data');
+    // Use absolute path to ensure data is always stored in the same location
+    // regardless of where the server is started from
+    this.dataDir = path.resolve(__dirname, '..', 'data');
     this.ensureDataDir();
   }
 

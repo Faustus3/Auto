@@ -27,6 +27,9 @@ const dataService = new DataService();
 // Ollama API configuration
 const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
+// Internal API URL for server-to-server calls (always localhost)
+const INTERNAL_API_URL = `http://localhost:${PORT}`;
+
 // Trust proxy for zrok tunnel
 app.set('trust proxy', 1);
 
@@ -309,7 +312,8 @@ Use this knowledge to answer the user's questions. If the knowledge is relevant,
           '2024', '2025', '2026', 'price', 'stock', 'weather', 'score',
           'who is', 'what is the', 'where can i find', 'how do i',
           'tutorial', 'documentation', 'api', 'official', 'website',
-          'can you find out', 'what day', 'what time', 'current date'
+          'can you find out', 'what day', 'what time', 'current date',
+          'search the web', 'look up', 'find online', 'google'
         ];
 
         const needsWebSearch = currentInfoKeywords.some(keyword => 
@@ -320,7 +324,7 @@ Use this knowledge to answer the user's questions. If the knowledge is relevant,
           console.log(`[WebAgent] Triggering agentic research for: "${query.substring(0, 50)}..."`);
 
           // Perform agentic research
-          const researchResponse = await fetch(`${req.protocol}://${req.get('host')}/api/research`, {
+          const researchResponse = await fetch(`${INTERNAL_API_URL}/api/research`, {
             method: 'POST',
             headers: {
               'Authorization': req.headers.authorization,

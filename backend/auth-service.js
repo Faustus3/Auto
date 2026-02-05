@@ -11,7 +11,7 @@ const path = require('path');
 class AuthService {
   constructor(jwtSecret) {
     this.jwtSecret = jwtSecret;
-    this.usersFilePath = path.join(__dirname, '../data/users.json');
+    this.usersFilePath = path.resolve(__dirname, '..', 'data', 'users.json');
     this.ensureUsersFile();
   }
 

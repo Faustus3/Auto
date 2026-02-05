@@ -17,7 +17,7 @@ class VectorService {
 
   async init() {
     try {
-      const chromaDir = path.join(__dirname, '../data/chroma');
+      const chromaDir = path.resolve(__dirname, '..', 'data', 'chroma');
       this.client = new ChromaClient({ path: chromaDir });
       
       // Create collections for different content types
