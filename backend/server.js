@@ -308,7 +308,8 @@ Use this knowledge to answer the user's questions. If the knowledge is relevant,
           'news', 'latest', 'recent', 'current', 'today', 'this week',
           '2024', '2025', '2026', 'price', 'stock', 'weather', 'score',
           'who is', 'what is the', 'where can i find', 'how do i',
-          'tutorial', 'documentation', 'api', 'official', 'website'
+          'tutorial', 'documentation', 'api', 'official', 'website',
+          'can you find out'
         ];
 
         const needsWebSearch = currentInfoKeywords.some(keyword => 
@@ -706,97 +707,100 @@ app.post('/api/index/reindex', authService.authenticateToken.bind(authService), 
 
 // === WEB SCRAPE API ===
 
+// Extract scrape logic into reusable function
+async function performScrape(url, options = {}) {
+  if (!url || typeof url !== 'string') {
+    throw new Error('URL is required');
+  }
+
+  // Validate URL
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new Error('Invalid URL format');
+  }
+
+  // Only allow HTTP/HTTPS
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Only HTTP/HTTPS URLs are allowed');
+  }
+
+  const timeout = (options?.timeout || 10) * 1000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; AutoDashboard/1.0)'
+    },
+    signal: controller.signal
+  });
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch URL: ${response.statusText}`);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  
+  if (!contentType.includes('text/html')) {
+    throw new Error('Only HTML content is supported for scraping');
+  }
+
+  const html = await response.text();
+
+  // Extract title
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].trim() : 'No title found';
+
+  // Remove script and style tags with their content
+  let cleanHtml = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
+
+  // Extract main content (simplified)
+  const bodyMatch = cleanHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  let content = bodyMatch ? bodyMatch[1] : cleanHtml;
+
+  // Convert HTML to plain text
+  content = content
+    .replace(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi, '\n\n### $1\n\n')
+    .replace(/<p[^>]*>([^<]+)<\/p>/gi, '\n$1\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>([^<]+)<\/li>/gi, '\n• $1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Limit content length
+  const maxLength = options?.maxLength || 8000;
+  if (content.length > maxLength) {
+    content = content.substring(0, maxLength) + '\n\n[Content truncated...]';
+  }
+
+  return {
+    success: true,
+    url,
+    title,
+    content,
+    contentLength: content.length
+  };
+}
+
 app.post('/api/scrape', authService.authenticateToken.bind(authService), async (req, res) => {
   try {
     const { url, options } = req.body;
-
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-
-    // Validate URL
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      return res.status(400).json({ error: 'Invalid URL format' });
-    }
-
-    // Only allow HTTP/HTTPS
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return res.status(400).json({ error: 'Only HTTP/HTTPS URLs are allowed' });
-    }
-
-    const timeout = (options?.timeout || 10) * 1000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AutoDashboard/1.0)'
-      },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return res.status(response.status).json({ 
-        error: `Failed to fetch URL: ${response.statusText}` 
-      });
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-    
-    if (!contentType.includes('text/html')) {
-      return res.status(400).json({ error: 'Only HTML content is supported for scraping' });
-    }
-
-    const html = await response.text();
-
-    // Extract title
-    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    const title = titleMatch ? titleMatch[1].trim() : 'No title found';
-
-    // Remove script and style tags with their content
-    let cleanHtml = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
-      .replace(/<!--[\s\S]*?-->/g, '');
-
-    // Extract main content (simplified)
-    const bodyMatch = cleanHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-    let content = bodyMatch ? bodyMatch[1] : cleanHtml;
-
-    // Convert HTML to plain text
-    content = content
-      .replace(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi, '\n\n### $1\n\n')
-      .replace(/<p[^>]*>([^<]+)<\/p>/gi, '\n$1\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<li[^>]*>([^<]+)<\/li>/gi, '\n• $1')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/&amp;/gi, '&')
-      .replace(/&lt;/gi, '<')
-      .replace(/&gt;/gi, '>')
-      .replace(/&quot;/gi, '"')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Limit content length
-    const maxLength = options?.maxLength || 8000;
-    if (content.length > maxLength) {
-      content = content.substring(0, maxLength) + '\n\n[Content truncated...]';
-    }
-
-    res.json({
-      success: true,
-      url,
-      title,
-      content,
-      contentLength: content.length
-    });
+    const result = await performScrape(url, options);
+    res.json(result);
   } catch (error) {
     console.error('Scrape error:', error);
     
@@ -815,24 +819,8 @@ app.post('/api/scrape/summary', authService.authenticateToken.bind(authService),
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    // First scrape the page
-    const scrapeResponse = await fetch(`${req.protocol}://${req.get('host')}/api/scrape`, {
-      method: 'POST',
-      headers: {
-        'Authorization': req.headers.authorization,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        url,
-        options: { maxLength: 4000 }
-      })
-    });
-
-    const scrapeData = await scrapeResponse.json();
-
-    if (!scrapeResponse.ok) {
-      return res.status(scrapeResponse.status).json(scrapeData);
-    }
+    // First scrape the page using direct function call
+    const scrapeData = await performScrape(url, { maxLength: 4000 });
 
     // Use Ollama to summarize
     const summaryController = new AbortController();
@@ -889,54 +877,8 @@ app.post('/api/search', authService.authenticateToken.bind(authService), async (
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    // DuckDuckGo HTML search (free, no API key)
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}&kl=us-en`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    const response = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Search failed' });
-    }
-
-    const html = await response.text();
-
-    // Parse DuckDuckGo results
-    const results = [];
-    const linkRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
-    const snippetRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+>[^<]+<\/a>[^<]*<[^>]+class="result__snippet"[^>]*>([^<]+)<\/p>/g;
-
-    let match;
-    while ((match = linkRegex.exec(html)) !== null && results.length < numResults) {
-      const url = match[1];
-      const title = match[2].replace(/<[^>]+>/g, '').trim();
-      
-      // Get snippet for this result
-      const snippetMatch = snippetRegex.exec(html);
-      const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-
-      if (url && title) {
-        results.push({
-          title,
-          url,
-          snippet: snippet || ''
-        });
-      }
-    }
-
-    res.json({
-      query,
-      results: results.slice(0, numResults)
-    });
+    const searchData = await performWebSearch(query, numResults);
+    res.json(searchData);
   } catch (error) {
     console.error('Search error:', error);
     if (error.name === 'AbortError') {
@@ -948,6 +890,55 @@ app.post('/api/search', authService.authenticateToken.bind(authService), async (
 
 // === AGENTIC WEB RESEARCH ===
 
+// Helper function to perform web search
+async function performWebSearch(query, numResults = 5) {
+  // DuckDuckGo HTML search (free, no API key)
+  const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}&kl=us-en`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  const response = await fetch(searchUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    signal: controller.signal
+  });
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    throw new Error('Search failed');
+  }
+
+  const html = await response.text();
+
+  // Parse DuckDuckGo results
+  const results = [];
+  const linkRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
+  const snippetRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+>[^<]+<\/a>[^<]*<[^>]+class="result__snippet"[^>]*>([^<]+)<\/p>/g;
+
+  let match;
+  while ((match = linkRegex.exec(html)) !== null && results.length < numResults) {
+    const url = match[1];
+    const title = match[2].replace(/<[^>]+>/g, '').trim();
+    
+    // Get snippet for this result
+    const snippetMatch = snippetRegex.exec(html);
+    const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+    if (url && title) {
+      results.push({
+        title,
+        url,
+        snippet: snippet || ''
+      });
+    }
+  }
+
+  return { query, results: results.slice(0, numResults) };
+}
+
 app.post('/api/research', authService.authenticateToken.bind(authService), async (req, res) => {
   try {
     const { query, depth = 2 } = req.body;
@@ -958,21 +949,8 @@ app.post('/api/research', authService.authenticateToken.bind(authService), async
 
     console.log(`[Research] Starting agentic research on: "${query}"`);
 
-    // Step 1: Search for relevant pages
-    const searchResponse = await fetch(`${req.protocol}://${req.get('host')}/api/search`, {
-      method: 'POST',
-      headers: {
-        'Authorization': req.headers.authorization,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ query, numResults: depth * 2 })
-    });
-
-    const searchData = await searchResponse.json();
-
-    if (!searchResponse.ok) {
-      return res.status(searchResponse.status).json(searchData);
-    }
+    // Step 1: Search for relevant pages using direct function call
+    const searchData = await performWebSearch(query, depth * 2);
 
     const researchResults = {
       query,
@@ -981,36 +959,22 @@ app.post('/api/research', authService.authenticateToken.bind(authService), async
       summary: ''
     };
 
-    // Step 2: Scrape top results
+    // Step 2: Scrape top results using direct function call
     for (const result of searchData.results.slice(0, depth)) {
       try {
-        const scrapeResponse = await fetch(`${req.protocol}://${req.get('host')}/api/scrape`, {
-          method: 'POST',
-          headers: {
-            'Authorization': req.headers.authorization,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            url: result.url, 
-            options: { maxLength: 3000 }
-          })
+        const scrapeData = await performScrape(result.url, { maxLength: 3000 });
+
+        researchResults.findings.push({
+          title: result.title,
+          url: result.url,
+          content: scrapeData.content
         });
 
-        const scrapeData = await scrapeResponse.json();
-
-        if (scrapeData.success) {
-          researchResults.findings.push({
-            title: result.title,
-            url: result.url,
-            content: scrapeData.content
-          });
-
-          researchResults.searches.push({
-            query: result.title,
-            url: result.url,
-            status: 'success'
-          });
-        }
+        researchResults.searches.push({
+          query: result.title,
+          url: result.url,
+          status: 'success'
+        });
       } catch (err) {
         researchResults.searches.push({
           query: result.title,

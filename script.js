@@ -23,11 +23,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Otherwise, use localhost:3001 for local development
     const isZrokDomain = window.location.hostname.includes('zrok.io') || 
                          window.location.hostname.includes('sohaltweil.de');
-    const API_BASE_URL = isZrokDomain 
-        ? 'https://finnserver.share.zrok.io/api'
-        : 'http://localhost:3001/api';
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1';
+    
+    let API_BASE_URL;
+    if (isZrokDomain) {
+        // For zrok/public domains, use the same origin
+        API_BASE_URL = `${window.location.origin}/api`;
+    } else if (isLocalhost) {
+        // For local development, backend runs on port 3001
+        API_BASE_URL = 'http://localhost:3001/api';
+    } else {
+        // Default fallback - same origin
+        API_BASE_URL = `${window.location.origin}/api`;
+    }
     
     console.log('API Base URL:', API_BASE_URL);
+    console.log('Hostname:', window.location.hostname);
+    console.log('Origin:', window.location.origin);
 
 // --- High-Frequency Neon String Animation (CHAOS EDITION) ---
     const canvas = glCanvas;
@@ -191,6 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 currentUser = username;
                 currentToken = data.token;
+                
+                // Store token in localStorage for persistence
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('username', username);
+                
                 loginMessage.textContent = 'Anmeldung erfolgreich!';
                 loginMessage.className = 'message success';
                 welcomeSection.style.display = 'none';
@@ -377,8 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', async () => {
         try {
-            // Send logout request to backend (if needed)
-            // For JWT tokens, we just clear the local token
+            // Clear stored token and user data
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
             currentToken = '';
             currentUser = '';
 
@@ -394,6 +413,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const utilityTracker = document.getElementById('utility-tracker');
             if (utilityTracker) {
                 utilityTracker.style.display = 'none';
+            }
+            
+            // Hide chat tile on logout
+            const chatTile = document.getElementById('chat-tile');
+            if (chatTile) {
+                chatTile.style.display = 'none';
             }
         } catch (error) {
             console.error('Logout error:', error);
@@ -739,8 +764,12 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     let isStreaming = false;
     let ragEnabled = false;
 
-    async function loadChatModels() {
+    async function loadChatModels(retryCount = 0) {
+        const maxRetries = 3;
+        
         try {
+            console.log('[Chat] Loading models from:', `${API_BASE_URL}/chat/models`);
+            
             const response = await fetch(`${API_BASE_URL}/chat/models`, {
                 method: 'GET',
                 headers: {
@@ -751,17 +780,51 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
             if (response.ok) {
                 const models = await response.json();
+                console.log('[Chat] Loaded', models.length, 'models');
+                
                 chatModelSelect.innerHTML = '<option value="" disabled selected>Modell auswählen...</option>';
-                models.forEach(model => {
+                
+                if (models.length === 0) {
                     const option = document.createElement('option');
-                    option.value = model.id;
-                    option.textContent = model.name;
+                    option.value = '';
+                    option.textContent = 'Keine Modelle gefunden - Ollama läuft?';
+                    option.disabled = true;
                     chatModelSelect.appendChild(option);
-                });
+                    addChatMessage('system', '⚠️ Keine Modelle gefunden. Bitte stelle sicher, dass Ollama läuft und Modelle installiert sind.');
+                } else {
+                    models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.name;
+                        chatModelSelect.appendChild(option);
+                    });
+                    addChatMessage('system', `✅ ${models.length} Modelle geladen. Wähle ein Modell aus!`);
+                }
+            } else {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP ${response.status}`);
             }
         } catch (error) {
-            console.error('Error loading chat models:', error);
-            addChatMessage('system', 'Fehler beim Laden der Modelle.');
+            console.error('[Chat] Error loading models:', error);
+            
+            if (retryCount < maxRetries) {
+                console.log(`[Chat] Retrying model load (${retryCount + 1}/${maxRetries})...`);
+                setTimeout(() => loadChatModels(retryCount + 1), 2000);
+            } else {
+                chatModelSelect.innerHTML = '<option value="" disabled selected>Fehler beim Laden</option>';
+                addChatMessage('system', `❌ Fehler beim Laden der Modelle: ${error.message}. Bitte prüfe, ob Ollama läuft.`);
+                
+                // Add retry button
+                const retryBtn = document.createElement('button');
+                retryBtn.textContent = '🔄 Erneut versuchen';
+                retryBtn.className = 'chat-retry-btn';
+                retryBtn.style.cssText = 'margin-top: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;';
+                retryBtn.onclick = () => {
+                    retryBtn.remove();
+                    loadChatModels(0);
+                };
+                chatHistory.appendChild(retryBtn);
+            }
         }
     }
 
@@ -832,7 +895,7 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     }
 
     async function scrapeUrl(url, summarize = false) {
-        const endpoint = summarize ? '/api/scrape/summary' : '/api/scrape';
+        const endpoint = summarize ? '/scrape/summary' : '/scrape';
         
         scrapeBtn.disabled = true;
         summarizeBtn.disabled = true;
@@ -904,6 +967,8 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
     async function streamChatResponse(model, messages, messageElement, textElement) {
         try {
+            console.log('[Chat] Sending request to:', `${API_BASE_URL}/chat/generate`);
+            
             const response = await fetch(`${API_BASE_URL}/chat/generate`, {
                 method: 'POST',
                 headers: {
@@ -925,12 +990,22 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to generate response');
+                const errorData = await response.json().catch(() => ({}));
+                const errorMsg = errorData.error || `HTTP ${response.status}`;
+                
+                if (response.status === 503) {
+                    throw new Error(`Ollama nicht erreichbar: ${errorMsg}. Bitte prüfe, ob Ollama läuft.`);
+                } else if (response.status === 401) {
+                    throw new Error('Sitzung abgelaufen. Bitte melde dich erneut an.');
+                } else {
+                    throw new Error(errorMsg);
+                }
             }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let accumulatedText = '';
+            let hasReceivedContent = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -951,25 +1026,59 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
                                 accumulatedText += content;
                                 textElement.textContent = accumulatedText;
                                 chatHistory.scrollTop = chatHistory.scrollHeight;
+                                hasReceivedContent = true;
+                            }
+                            if (parsed.error) {
+                                throw new Error(parsed.error);
                             }
                         } catch (e) {
+                            if (e.message && !e.message.includes('Unexpected token')) {
+                                console.error('[Chat] Stream parse error:', e);
+                            }
                         }
                     }
                 }
             }
 
-            chatMessages.push({ role: 'assistant', text: accumulatedText });
+            if (!hasReceivedContent) {
+                textElement.textContent = '⚠️ Keine Antwort vom Modell erhalten.';
+                chatMessages.push({ role: 'assistant', text: '⚠️ Keine Antwort vom Modell erhalten.' });
+            } else {
+                chatMessages.push({ role: 'assistant', text: accumulatedText });
+            }
 
         } catch (error) {
-            console.error('Error streaming response:', error);
-            textElement.textContent = 'Fehler bei der Antwort.';
-            chatMessages.push({ role: 'assistant', text: 'Fehler bei der Antwort.' });
+            console.error('[Chat] Error streaming response:', error);
+            textElement.textContent = `❌ Fehler: ${error.message}`;
+            chatMessages.push({ role: 'assistant', text: `❌ Fehler: ${error.message}` });
+            
+            // If it's an auth error, clear the token
+            if (error.message.includes('Sitzung abgelaufen') || error.message.includes('401')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                addChatMessage('system', '🔒 Sitzung abgelaufen. Bitte lade die Seite neu und melde dich an.');
+            }
         }
     }
 
     async function sendChatMessage() {
         const message = chatInput.value.trim();
-        if (!message || !selectedModel || isStreaming) return;
+        
+        if (!message) {
+            console.log('[Chat] Empty message, ignoring');
+            return;
+        }
+        
+        if (!selectedModel) {
+            addChatMessage('system', '⚠️ Bitte wähle zuerst ein Modell aus dem Dropdown-Menü aus!');
+            chatModelSelect.focus();
+            return;
+        }
+        
+        if (isStreaming) {
+            console.log('[Chat] Already streaming, ignoring');
+            return;
+        }
 
         isStreaming = true;
         chatInput.value = '';
@@ -979,8 +1088,13 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
 
         const { messageElement, textElement } = createStreamingMessageElement('assistant');
 
+        // Filter messages to only include user and assistant roles
+        const validMessages = chatMessages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .slice(-10);
+        
         const messagesToSubmit = [
-            ...chatMessages.slice(-10),
+            ...validMessages,
             { role: 'user', text: message }
         ];
 
@@ -1103,16 +1217,48 @@ const response = await fetch(`${API_BASE_URL}/data/save`, {
     // === CHECK LOGIN STATUS ON LOAD ===
     
     // Überprüfe Login-Status (auch nach Refresh)
-    function checkLoginAndShow() {
+    async function checkLoginAndShow() {
         const token = localStorage.getItem('token');
+        const storedUsername = localStorage.getItem('username');
+        
         if (token) {
-            showChatTile();
-            if (loginSection) loginSection.style.display = 'none';
-            if (welcomeSection) welcomeSection.style.display = 'none';
-            if (websiteLinkSection) websiteLinkSection.style.display = 'none';
-            if (privateFilesSection) privateFilesSection.style.display = 'block';
-            loadUserData();
-            renderBlogPosts();
+            // Verify token is still valid
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    // Token is valid, restore session
+                    currentToken = token;
+                    currentUser = storedUsername || '';
+                    
+                    showChatTile();
+                    if (loginSection) loginSection.style.display = 'none';
+                    if (welcomeSection) welcomeSection.style.display = 'none';
+                    if (websiteLinkSection) websiteLinkSection.style.display = 'none';
+                    if (privateFilesSection) privateFilesSection.style.display = 'block';
+                    
+                    const utilityTracker = document.getElementById('utility-tracker');
+                    if (utilityTracker) {
+                        utilityTracker.style.display = 'block';
+                    }
+                    
+                    await loadUserData();
+                    renderBlogPosts();
+                    console.log('[Auth] Session restored from localStorage');
+                } else {
+                    // Token expired or invalid, clear it
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    console.log('[Auth] Token invalid, cleared from storage');
+                }
+            } catch (error) {
+                console.error('[Auth] Error verifying token:', error);
+                // Keep token in case of network error, will retry on next request
+            }
         }
     }
 
