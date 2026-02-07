@@ -11,6 +11,7 @@
 
 const DatabaseService = require('./database-service');
 const VectorService = require('./vector-service');
+const PromptService = require('./prompt-service');
 
 class OllamaContextService {
   constructor() {
@@ -254,7 +255,7 @@ class OllamaContextService {
   }
 
   /**
-   * Build formatted context string from results
+   * Build formatted context string from results using PromptService
    * @param {Array} results - Search results
    * @returns {string} Formatted context
    */
@@ -289,17 +290,12 @@ class OllamaContextService {
       currentLength += resultLength;
     }
 
-    // Build final context
-    context = `=== RELEVANT KNOWLEDGE BASE ===
-The following information from your knowledge base may help answer the user's question:
-
-${includedResults.join('\n---\n\n')}
-
-=== END KNOWLEDGE BASE ===
-
-Use the information above to answer the user's question. If the knowledge is relevant, cite it in your response. If you cannot find relevant information, respond based on your general knowledge.`;
-
-    return context;
+    // Build final context using PromptService
+    const contextContent = includedResults.join('\n---\n\n');
+    return PromptService.buildRagPrompt(contextContent, {
+      searchMethod: 'hybrid',
+      resultCount: results.length
+    }).content;
   }
 
   /**

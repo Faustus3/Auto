@@ -18,6 +18,7 @@ const VectorService = require('./vector-service');
 const DatabaseService = require('./database-service');
 const FileStorageService = require('./file-storage-service');
 const OllamaContextService = require('./ollama-context-service');
+const PromptService = require('./prompt-service');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -322,19 +323,17 @@ app.post('/api/chat/generate', authService.authenticateToken.bind(authService), 
         if (context) {
           const existingSystemIndex = ollamaMessages.findIndex(m => m.role === 'system');
           
-          const ragSystemMessage = {
-            role: 'system',
-            content: `${context}
-
-[Search Method: ${searchMethod.toUpperCase()}]
-
-Use this knowledge to answer the user's questions. If the knowledge is relevant, incorporate it into your response.`
-          };
-
+          // Use PromptService for RAG prompt
+          const ragPrompt = PromptService.buildRagPrompt(context, {
+            searchMethod: searchMethod,
+            resultCount: semanticResults?.length || keywordResults?.returnedResults || 0
+          });
+          
           if (existingSystemIndex >= 0) {
-            ollamaMessages[existingSystemIndex].content += '\n\n' + ragSystemMessage.content;
+            // Combine with existing system prompt
+            ollamaMessages[existingSystemIndex].content += '\n\n' + ragPrompt.content;
           } else {
-            ollamaMessages.unshift(ragSystemMessage);
+            ollamaMessages.unshift(ragPrompt);
           }
         }
       } catch (ragError) {
@@ -376,37 +375,32 @@ Use this knowledge to answer the user's questions. If the knowledge is relevant,
             const researchData = await researchResponse.json();
 
             if (researchData.summary || researchData.findings?.length > 0) {
-              let webContext = '\n\n=== WEB RESEARCH RESULTS ===\n\n';
-
+              // Build web context content
+              let webContextContent = '';
+              
               if (researchData.summary) {
-                webContext += `Summary:\n${researchData.summary}\n\n`;
+                webContextContent += `ZUSAMMENFASSUNG:\n${researchData.summary}\n\n`;
               }
 
-              webContext += `Sources Analyzed: ${researchData.findings?.length || 0}\n`;
-
               if (researchData.findings?.length > 0) {
-                webContext += '\nTop Sources:\n';
-                researchData.findings.slice(0, 3).forEach((f, i) => {
-                  webContext += `${i + 1}. ${f.title} (${f.url})\n`;
+                webContextContent += 'DETAILLIERTE ERGEBNISSE:\n\n';
+                researchData.findings.forEach((f, i) => {
+                  webContextContent += `[${i + 1}] ${f.title}\nURL: ${f.url}\n${f.content || f.snippet || ''}\n\n`;
                 });
               }
 
-              webContext += '\n[Information gathered from live web sources]\n';
-
-              // Add to system message
+              // Use PromptService for websearch prompt
               const existingSystemIndex = ollamaMessages.findIndex(m => m.role === 'system');
               
-              const webSystemMessage = {
-                role: 'system',
-                content: `${webContext}
-
-Use this up-to-date web information to provide accurate, current answers. Cite relevant sources when appropriate.`
-              };
-
+              const webPrompt = PromptService.buildWebsearchPrompt(webContextContent, {
+                query: query,
+                sourceCount: researchData.findings?.length || 0
+              });
+              
               if (existingSystemIndex >= 0) {
-                ollamaMessages[existingSystemIndex].content += webSystemMessage.content;
+                ollamaMessages[existingSystemIndex].content += '\n\n' + webPrompt.content;
               } else {
-                ollamaMessages.unshift(webSystemMessage);
+                ollamaMessages.unshift(webPrompt);
               }
 
               console.log(`[WebAgent] Research complete: ${researchData.findings?.length || 0} sources analyzed`);
@@ -1432,6 +1426,126 @@ app.get('/api/db/stats', authService.authenticateToken.bind(authService), (req, 
     });
   } catch (error) {
     console.error('[DB] Stats error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === MASTER PROMPT API ===
+
+/**
+ * GET /api/prompts
+ * List all available prompt paths
+ */
+app.get('/api/prompts', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const prompts = PromptService.listAvailablePrompts();
+    const versionInfo = PromptService.getVersionInfo();
+    
+    res.json({
+      success: true,
+      version: versionInfo,
+      availablePrompts: prompts
+    });
+  } catch (error) {
+    console.error('[Prompts] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/prompts/:path(*)
+ * Get a specific prompt by path
+ */
+app.get('/api/prompts/*', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const path = req.params[0];
+    
+    if (!PromptService.isValidPath(path)) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Prompt path not found',
+        available: PromptService.listAvailablePrompts()
+      });
+    }
+    
+    const prompt = PromptService.get(path);
+    
+    res.json({
+      success: true,
+      path: path,
+      prompt: prompt
+    });
+  } catch (error) {
+    console.error('[Prompts] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/prompts/build
+ * Build a prompt with context
+ */
+app.post('/api/prompts/build', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const { type, context, options = {} } = req.body;
+    
+    let prompt;
+    
+    switch (type) {
+      case 'rag':
+        prompt = PromptService.buildRagPrompt(context, options);
+        break;
+      case 'websearch':
+        prompt = PromptService.buildWebsearchPrompt(context, options);
+        break;
+      case 'combined':
+        prompt = PromptService.buildCombinedPrompt(
+          { ragContext: options.ragContext, webContext: options.webContext },
+          options
+        );
+        break;
+      case 'code':
+        prompt = PromptService.getCodeAssistantPrompt(options.language);
+        break;
+      case 'analysis':
+        prompt = PromptService.getAnalysisPrompt();
+        break;
+      case 'learning':
+        prompt = PromptService.getLearningPrompt(options.topic);
+        break;
+      default:
+        return res.status(400).json({
+          success: false,
+          error: 'Unknown prompt type',
+          availableTypes: ['rag', 'websearch', 'combined', 'code', 'analysis', 'learning']
+        });
+    }
+    
+    res.json({
+      success: true,
+      type: type,
+      prompt: prompt
+    });
+  } catch (error) {
+    console.error('[Prompts] Build error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/prompts/stats
+ * Get prompt usage statistics
+ */
+app.get('/api/prompts/stats', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const stats = PromptService.getUsageStats();
+    
+    res.json({
+      success: true,
+      stats: stats
+    });
+  } catch (error) {
+    console.error('[Prompts] Stats error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
