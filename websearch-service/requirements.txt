@@ -1,0 +1,22 @@
+# WebSearchIntegrator Dependencies
+
+# Web Search
+duckduckgo-search>=3.9.0
+
+# Async HTTP
+aiohttp>=3.9.0
+aiosignal>=1.3.0
+frozenlist>=1.4.0
+async-timeout>=4.0.0;python_version<"3.11"
+
+# HTML Parsing
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+soupsieve>=2.5
+
+# Datenverarbeitung
+typing-extensions>=4.8.0
+
+# Optional: Für erweiterte Features
+# playwright>=1.40.0  # Für JavaScript-rendered Seiten
+# fake-useragent>=1.4.0  # Für rotierende User-Agents

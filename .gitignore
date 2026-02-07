@@ -25,3 +25,16 @@ Thumbs.db
 package.json
 package-lock.json
 nul
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Uploads
+data/uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

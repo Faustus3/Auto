@@ -8,11 +8,16 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
+const { exec } = require('child_process');
+const path = require('path');
 
 // Import services
 const AuthService = require('./auth-service');
 const DataService = require('./data-service');
 const VectorService = require('./vector-service');
+const DatabaseService = require('./database-service');
+const FileStorageService = require('./file-storage-service');
+const OllamaContextService = require('./ollama-context-service');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +34,40 @@ const OLLAMA_BASE_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
 // Internal API URL for server-to-server calls (always localhost)
 const INTERNAL_API_URL = `http://localhost:${PORT}`;
+
+// Python WebSearch Service path
+const PYTHON_WEBSEARCH_PATH = path.join(__dirname, '..', 'websearch-service', 'api_bridge.py');
+
+/**
+ * Helper function to call Python WebSearch service
+ * @param {string} query - Search query
+ * @param {string} mode - 'search', 'research', or 'ollama'
+ * @param {number} maxResults - Max results
+ * @returns {Promise<Object>} Python service response
+ */
+async function callPythonWebSearch(query, mode = 'research', maxResults = 3) {
+  return new Promise((resolve, reject) => {
+    const cmd = `python "${PYTHON_WEBSEARCH_PATH}" --query "${query.replace(/"/g, '\\"')}" --mode ${mode} --max-results ${maxResults}`;
+    
+    exec(cmd, { cwd: path.join(__dirname, '..') }, (error, stdout, stderr) => {
+      if (error) {
+        console.error('[WebSearch] Python error:', error.message);
+        return reject(new Error('Web search failed'));
+      }
+      
+      try {
+        const result = JSON.parse(stdout);
+        if (result.error) {
+          return reject(new Error(result.error));
+        }
+        resolve(result);
+      } catch (parseError) {
+        console.error('[WebSearch] Parse error:', parseError);
+        reject(new Error('Invalid response from web search service'));
+      }
+    });
+  });
+}
 
 // Trust proxy for zrok tunnel
 app.set('trust proxy', 1);
@@ -715,167 +754,7 @@ app.post('/api/index/reindex', authService.authenticateToken.bind(authService), 
 
 // === WEB SCRAPE API ===
 
-// Extract scrape logic into reusable function
-async function performScrape(url, options = {}) {
-  if (!url || typeof url !== 'string') {
-    throw new Error('URL is required');
-  }
-
-  // Validate URL
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(url);
-  } catch {
-    throw new Error('Invalid URL format');
-  }
-
-  // Only allow HTTP/HTTPS
-  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    throw new Error('Only HTTP/HTTPS URLs are allowed');
-  }
-
-  const timeout = (options?.timeout || 10) * 1000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; AutoDashboard/1.0)'
-    },
-    signal: controller.signal
-  });
-
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch URL: ${response.statusText}`);
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  
-  if (!contentType.includes('text/html')) {
-    throw new Error('Only HTML content is supported for scraping');
-  }
-
-  const html = await response.text();
-
-  // Extract title
-  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  const title = titleMatch ? titleMatch[1].trim() : 'No title found';
-
-  // Remove script and style tags with their content
-  let cleanHtml = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '');
-
-  // Extract main content (simplified)
-  const bodyMatch = cleanHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  let content = bodyMatch ? bodyMatch[1] : cleanHtml;
-
-  // Convert HTML to plain text
-  content = content
-    .replace(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi, '\n\n### $1\n\n')
-    .replace(/<p[^>]*>([^<]+)<\/p>/gi, '\n$1\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<li[^>]*>([^<]+)<\/li>/gi, '\n• $1')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  // Limit content length
-  const maxLength = options?.maxLength || 8000;
-  if (content.length > maxLength) {
-    content = content.substring(0, maxLength) + '\n\n[Content truncated...]';
-  }
-
-  return {
-    success: true,
-    url,
-    title,
-    content,
-    contentLength: content.length
-  };
-}
-
-app.post('/api/scrape', authService.authenticateToken.bind(authService), async (req, res) => {
-  try {
-    const { url, options } = req.body;
-    const result = await performScrape(url, options);
-    res.json(result);
-  } catch (error) {
-    console.error('Scrape error:', error);
-    
-    if (error.name === 'AbortError') {
-      return res.status(504).json({ error: 'Request timed out' });
-    }
-    res.status(500).json({ error: error.message || 'Failed to scrape URL' });
-  }
-});
-
-app.post('/api/scrape/summary', authService.authenticateToken.bind(authService), async (req, res) => {
-  try {
-    const { url } = req.body;
-
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'URL is required' });
-    }
-
-    // First scrape the page using direct function call
-    const scrapeData = await performScrape(url, { maxLength: 4000 });
-
-    // Use Ollama to summarize
-    const summaryController = new AbortController();
-    const summaryTimeout = setTimeout(() => summaryController.abort(), 30000);
-
-    const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama3.2', // Use a fast model for summarization
-        messages: [{
-          role: 'system',
-          content: 'You are a helpful assistant that summarizes web content. Provide a concise summary of the main points in German or English as appropriate.'
-        }, {
-          role: 'user',
-          content: `Please summarize this webpage content in 3-5 bullet points:\n\n${scrapeData.content}`
-        }],
-        stream: false
-      }),
-      signal: summaryController.signal
-    });
-
-    clearTimeout(summaryTimeout);
-
-    if (ollamaResponse.ok) {
-      const summaryData = await ollamaResponse.json();
-      res.json({
-        url: scrapeData.url,
-        title: scrapeData.title,
-        summary: summaryData.message?.content || 'Could not generate summary',
-        fullContent: scrapeData.content
-      });
-    } else {
-      res.json({
-        url: scrapeData.url,
-        title: scrapeData.title,
-        summary: '(Summary generation failed - see full content)',
-        fullContent: scrapeData.content
-      });
-    }
-  } catch (error) {
-    console.error('Summary error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate summary' });
-  }
-});
-
-// === WEB SEARCH API (DuckDuckGo - Free) ===
+// === WEB SEARCH API (Python-powered) ===
 
 app.post('/api/search', authService.authenticateToken.bind(authService), async (req, res) => {
   try {
@@ -885,67 +764,20 @@ app.post('/api/search', authService.authenticateToken.bind(authService), async (
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    const searchData = await performWebSearch(query, numResults);
-    res.json(searchData);
+    console.log(`[WebSearch] Query: "${query}"`);
+    const result = await callPythonWebSearch(query, 'search', numResults);
+    
+    res.json({
+      query: result.query,
+      results: result.results
+    });
   } catch (error) {
-    console.error('Search error:', error);
-    if (error.name === 'AbortError') {
-      return res.status(504).json({ error: 'Search timed out' });
-    }
+    console.error('[WebSearch] Error:', error);
     res.status(500).json({ error: error.message || 'Search failed' });
   }
 });
 
-// === AGENTIC WEB RESEARCH ===
-
-// Helper function to perform web search
-async function performWebSearch(query, numResults = 5) {
-  // DuckDuckGo HTML search (free, no API key)
-  const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}&kl=us-en`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  const response = await fetch(searchUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
-    signal: controller.signal
-  });
-
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    throw new Error('Search failed');
-  }
-
-  const html = await response.text();
-
-  // Parse DuckDuckGo results
-  const results = [];
-  const linkRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([^<]+)<\/a>/g;
-  const snippetRegex = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+>[^<]+<\/a>[^<]*<[^>]+class="result__snippet"[^>]*>([^<]+)<\/p>/g;
-
-  let match;
-  while ((match = linkRegex.exec(html)) !== null && results.length < numResults) {
-    const url = match[1];
-    const title = match[2].replace(/<[^>]+>/g, '').trim();
-    
-    // Get snippet for this result
-    const snippetMatch = snippetRegex.exec(html);
-    const snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-
-    if (url && title) {
-      results.push({
-        title,
-        url,
-        snippet: snippet || ''
-      });
-    }
-  }
-
-  return { query, results: results.slice(0, numResults) };
-}
+// === AGENTIC WEB RESEARCH (Python-powered) ===
 
 app.post('/api/research', authService.authenticateToken.bind(authService), async (req, res) => {
   try {
@@ -955,83 +787,652 @@ app.post('/api/research', authService.authenticateToken.bind(authService), async
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    console.log(`[Research] Starting agentic research on: "${query}"`);
+    console.log(`[Research] Starting research on: "${query}"`);
 
-    // Step 1: Search for relevant pages using direct function call
-    const searchData = await performWebSearch(query, depth * 2);
+    // Use Python service for full research
+    const result = await callPythonWebSearch(query, 'research', depth);
+    
+    // Generate summary using Ollama if we have findings
+    if (result.results && result.results.length > 0) {
+      const successfulFindings = result.results.filter(r => r.success);
+      
+      if (successfulFindings.length > 0) {
+        const combinedContent = successfulFindings
+          .map(f => `Source: ${f.title}\n${f.content}`)
+          .join('\n\n---\n\n');
 
-    const researchResults = {
-      query,
-      searches: [],
-      findings: [],
-      summary: ''
-    };
+        const summaryController = new AbortController();
+        const summaryTimeout = setTimeout(() => summaryController.abort(), 60000);
 
-    // Step 2: Scrape top results using direct function call
-    for (const result of searchData.results.slice(0, depth)) {
-      try {
-        const scrapeData = await performScrape(result.url, { maxLength: 3000 });
+        try {
+          const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'llama3.2',
+              messages: [{
+                role: 'system',
+                content: 'You are a research assistant. Summarize the findings from multiple web sources into a comprehensive answer. Structure your response with key points and cite sources. Keep it concise but informative.'
+              }, {
+                role: 'user',
+                content: `Research Question: ${query}\n\nWeb Findings:\n${combinedContent.substring(0, 8000)}`
+              }],
+              stream: false
+            }),
+            signal: summaryController.signal
+          });
 
-        researchResults.findings.push({
-          title: result.title,
-          url: result.url,
-          content: scrapeData.content
-        });
+          clearTimeout(summaryTimeout);
 
-        researchResults.searches.push({
-          query: result.title,
-          url: result.url,
-          status: 'success'
-        });
-      } catch (err) {
-        researchResults.searches.push({
-          query: result.title,
-          url: result.url,
-          status: 'failed',
-          error: err.message
-        });
+          if (ollamaResponse.ok) {
+            const summaryData = await ollamaResponse.json();
+            result.summary = summaryData.message?.content || 'Could not generate summary';
+          }
+        } catch (ollamaError) {
+          console.warn('[Research] Ollama summary failed:', ollamaError.message);
+          result.summary = 'Summary generation failed';
+        }
       }
     }
 
-    // Step 3: Generate summary using Ollama
-    if (researchResults.findings.length > 0) {
-      const combinedContent = researchResults.findings
-        .map(f => `Source: ${f.title}\n${f.content}`)
-        .join('\n\n---\n\n');
-
-      const summaryController = new AbortController();
-      const summaryTimeout = setTimeout(() => summaryController.abort(), 60000);
-
-      const ollamaResponse = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'llama3.2',
-          messages: [{
-            role: 'system',
-            content: 'You are a research assistant. Summarize the findings from multiple web sources into a comprehensive answer. Structure your response with key points and cite sources. Keep it concise but informative.'
-          }, {
-            role: 'user',
-            content: `Research Question: ${query}\n\nWeb Findings:\n${combinedContent.substring(0, 8000)}`
-          }],
-          stream: false
-        }),
-        signal: summaryController.signal
-      });
-
-      clearTimeout(summaryTimeout);
-
-      if (ollamaResponse.ok) {
-        const summaryData = await ollamaResponse.json();
-        researchResults.summary = summaryData.message?.content || 'Could not generate summary';
-      }
-    }
-
-    console.log(`[Research] Completed: ${researchResults.findings.length} sources analyzed`);
-    res.json(researchResults);
+    console.log(`[Research] Completed: ${result.sources?.successful || 0} sources analyzed`);
+    res.json({
+      query: result.query,
+      context: result.context,
+      summary: result.summary || '',
+      sources: result.sources,
+      findings: result.results
+    });
   } catch (error) {
-    console.error('Research error:', error);
+    console.error('[Research] Error:', error);
     res.status(500).json({ error: error.message || 'Research failed' });
+  }
+});
+
+// === FILE UPLOAD ENDPOINTS ===
+
+/**
+ * POST /api/upload
+ * Upload a file with validation
+ */
+app.post('/api/upload', authService.authenticateToken.bind(authService), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { description } = req.body;
+    const userId = req.user.username;
+
+    // Store file using FileStorageService
+    const fileData = await FileStorageService.storeFile(userId, req.file, {
+      description: description || null
+    });
+
+    // Register in database
+    const dbRecord = DatabaseService.createFile(userId, {
+      originalName: fileData.originalName,
+      storedName: fileData.storedName,
+      filePath: fileData.filePath,
+      mimeType: fileData.mimeType,
+      fileSize: fileData.fileSize,
+      description: fileData.description
+    });
+
+    // If it's a text file, index it for RAG
+    if (fileData.metadata && fileData.metadata.textContent) {
+      try {
+        await VectorService.indexKnowledge(userId, fileData.originalName, 1, fileData.metadata.textContent);
+        console.log(`[VectorStore] Indexed file: ${fileData.originalName}`);
+      } catch (indexError) {
+        console.warn('[VectorStore] Failed to index file:', indexError.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      file: {
+        id: dbRecord.id,
+        originalName: dbRecord.originalName,
+        mimeType: dbRecord.mimeType,
+        fileSize: dbRecord.fileSize,
+        category: fileData.category,
+        createdAt: dbRecord.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('[Upload] Error:', error.message);
+    res.status(400).json({ 
+      error: error.message || 'Failed to upload file'
+    });
+  }
+});
+
+/**
+ * GET /api/files
+ * Get all files for the user
+ */
+app.get('/api/files', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const files = DatabaseService.getFilesByUser(userId);
+    
+    res.json({
+      success: true,
+      files: files.map(f => ({
+        id: f.id,
+        originalName: f.originalName,
+        mimeType: f.mimeType,
+        fileSize: f.fileSize,
+        description: f.description,
+        createdAt: f.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('[Files] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/files/:id
+ * Get file details
+ */
+app.get('/api/files/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const fileId = parseInt(req.params.id);
+    
+    const file = DatabaseService.getFileById(userId, fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.json({
+      success: true,
+      file
+    });
+  } catch (error) {
+    console.error('[Files] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/files/:id/download
+ * Download a file
+ */
+app.get('/api/files/:id/download', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const userId = req.user.username;
+    const fileId = parseInt(req.params.id);
+    
+    const file = DatabaseService.getFileById(userId, fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    res.download(file.filePath, file.originalName);
+  } catch (error) {
+    console.error('[Files] Download error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/files/:id
+ * Delete a file
+ */
+app.delete('/api/files/:id', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const userId = req.user.username;
+    const fileId = parseInt(req.params.id);
+    
+    const file = DatabaseService.getFileById(userId, fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    // Delete from storage
+    await FileStorageService.deleteFile(file.filePath);
+    
+    // Delete from database
+    DatabaseService.deleteFile(userId, fileId);
+    
+    res.json({ success: true, message: 'File deleted successfully' });
+  } catch (error) {
+    console.error('[Files] Delete error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/files/allowed-types
+ * Get allowed MIME types
+ */
+app.get('/api/files/allowed-types', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const allowedTypes = FileStorageService.getAllowedTypes();
+    res.json({
+      success: true,
+      allowedTypes
+    });
+  } catch (error) {
+    console.error('[Files] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === NOTES ENDPOINTS (SQLite-based) ===
+
+/**
+ * POST /api/notes
+ * Create a new note
+ */
+app.post('/api/notes', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const { title, content, tags } = req.body;
+    
+    const note = DatabaseService.createNote(userId, { title, content, tags });
+    
+    // Index in vector store for RAG
+    try {
+      VectorService.indexNote(userId, note.id, note.title, note.content);
+      console.log(`[VectorStore] Indexed note: ${note.id}`);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to index note:', indexError.message);
+    }
+    
+    res.status(201).json({
+      success: true,
+      note
+    });
+  } catch (error) {
+    console.error('[Notes] Create error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/notes
+ * Get all notes for user
+ */
+app.get('/api/notes', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    const result = DatabaseService.getNotesByUser(userId, { limit, offset });
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('[Notes] List error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/notes/:id
+ * Get single note
+ */
+app.get('/api/notes/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const noteId = parseInt(req.params.id);
+    
+    const note = DatabaseService.getNoteById(userId, noteId);
+    if (!note) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+    
+    res.json({
+      success: true,
+      note
+    });
+  } catch (error) {
+    console.error('[Notes] Get error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/notes/:id
+ * Update a note
+ */
+app.put('/api/notes/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const noteId = parseInt(req.params.id);
+    const { title, content, tags } = req.body;
+    
+    const note = DatabaseService.updateNote(userId, noteId, { title, content, tags });
+    
+    // Update vector index
+    try {
+      VectorService.indexNote(userId, note.id, note.title, note.content);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to re-index note:', indexError.message);
+    }
+    
+    res.json({
+      success: true,
+      note
+    });
+  } catch (error) {
+    console.error('[Notes] Update error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/notes/:id
+ * Delete a note
+ */
+app.delete('/api/notes/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const noteId = parseInt(req.params.id);
+    
+    DatabaseService.deleteNote(userId, noteId);
+    
+    // Remove from vector index
+    try {
+      VectorService.deleteNote(userId, noteId);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to remove note from index:', indexError.message);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Note deleted successfully'
+    });
+  } catch (error) {
+    console.error('[Notes] Delete error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/notes/search
+ * Search notes
+ */
+app.get('/api/notes/search', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const userId = req.user.username;
+    const { q: query, limit = 20 } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({ error: 'Query parameter "q" is required' });
+    }
+    
+    const results = DatabaseService.searchNotes(userId, query, parseInt(limit));
+    
+    res.json({
+      success: true,
+      query,
+      results
+    });
+  } catch (error) {
+    console.error('[Notes] Search error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === BLOG POSTS ENDPOINTS (SQLite-based) ===
+
+/**
+ * POST /api/posts
+ * Create a new blog post
+ */
+app.post('/api/posts', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const { title, content, tags, isPublic } = req.body;
+    const author = req.user.username;
+    const authorDisplayName = req.user.displayName || author;
+    
+    const post = DatabaseService.createBlogPost({
+      title,
+      content,
+      author,
+      authorDisplayName,
+      tags,
+      isPublic
+    });
+    
+    // Index in vector store
+    try {
+      VectorService.indexBlogPost(post);
+      console.log(`[VectorStore] Indexed blog post: ${post.id}`);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to index blog post:', indexError.message);
+    }
+    
+    res.status(201).json({
+      success: true,
+      post
+    });
+  } catch (error) {
+    console.error('[Blog] Create error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/posts
+ * Get all public blog posts
+ */
+app.get('/api/posts', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    const result = DatabaseService.getAllBlogPosts({ limit, offset });
+    
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error) {
+    console.error('[Blog] List error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/posts/:id
+ * Get single blog post
+ */
+app.get('/api/posts/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const postId = parseInt(req.params.id);
+    
+    const post = DatabaseService.getBlogPostById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    res.json({
+      success: true,
+      post
+    });
+  } catch (error) {
+    console.error('[Blog] Get error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * PUT /api/posts/:id
+ * Update a blog post
+ */
+app.put('/api/posts/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const author = req.user.username;
+    const postId = parseInt(req.params.id);
+    const { title, content, tags } = req.body;
+    
+    const post = DatabaseService.updateBlogPost(author, postId, { title, content, tags });
+    
+    // Update vector index
+    try {
+      VectorService.indexBlogPost(post);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to re-index blog post:', indexError.message);
+    }
+    
+    res.json({
+      success: true,
+      post
+    });
+  } catch (error) {
+    console.error('[Blog] Update error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/posts/:id
+ * Delete a blog post
+ */
+app.delete('/api/posts/:id', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const author = req.user.username;
+    const postId = parseInt(req.params.id);
+    
+    DatabaseService.deleteBlogPost(author, postId);
+    
+    // Remove from vector index
+    try {
+      VectorService.deleteBlogPost(postId);
+    } catch (indexError) {
+      console.warn('[VectorStore] Failed to remove blog post from index:', indexError.message);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Post deleted successfully'
+    });
+  } catch (error) {
+    console.error('[Blog] Delete error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/posts/search
+ * Search blog posts
+ */
+app.get('/api/posts/search', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const { q: query, limit = 20 } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({ error: 'Query parameter "q" is required' });
+    }
+    
+    const results = DatabaseService.searchBlogPosts(query, parseInt(limit));
+    
+    res.json({
+      success: true,
+      query,
+      results
+    });
+  } catch (error) {
+    console.error('[Blog] Search error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === OLLAMA AGENT CONTEXT ENDPOINTS ===
+
+/**
+ * POST /api/query-agent
+ * Query Ollama with RAG context
+ */
+app.post('/api/query-agent', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const userId = req.user.username;
+    const { query, options = {} } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+    
+    console.log(`[QueryAgent] Processing query: "${query.substring(0, 50)}..."`);
+    
+    // Get context from knowledge base
+    const context = await OllamaContextService.getContextForOllama(userId, query, options);
+    
+    res.json({
+      success: true,
+      query,
+      hasContext: !!context,
+      context: context,
+      sourcesSearched: {
+        notes: options.searchNotes !== false,
+        blogPosts: options.searchBlogPosts !== false,
+        files: options.searchFiles !== false,
+        knowledge: options.searchKnowledge !== false
+      }
+    });
+    
+  } catch (error) {
+    console.error('[QueryAgent] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/query-agent/quick
+ * Quick context query for simple use cases
+ */
+app.post('/api/query-agent/quick', authService.authenticateToken.bind(authService), async (req, res) => {
+  try {
+    const userId = req.user.username;
+    const { query } = req.body;
+    
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+    
+    const context = await OllamaContextService.quickContext(userId, query);
+    
+    res.json({
+      success: true,
+      query,
+      hasContext: !!context,
+      context: context
+    });
+    
+  } catch (error) {
+    console.error('[QueryAgent] Quick query error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// === DATABASE HEALTH ENDPOINT ===
+
+/**
+ * GET /api/db/stats
+ * Get database statistics
+ */
+app.get('/api/db/stats', authService.authenticateToken.bind(authService), (req, res) => {
+  try {
+    const stats = DatabaseService.getStats();
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('[DB] Stats error:', error.message);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -1046,8 +1447,27 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`[Database] SQLite database: ${DatabaseService.dbPath}`);
+  console.log(`[Storage] Upload directory: ${FileStorageService.uploadDir}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server gracefully');
+  server.close(() => {
+    DatabaseService.close();
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, closing server gracefully');
+  server.close(() => {
+    DatabaseService.close();
+    process.exit(0);
+  });
 });
 
 module.exports = app;
